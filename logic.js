@@ -2403,8 +2403,14 @@ function initWater() {
 
 function renderWaterGlasses() {
   const grid = document.getElementById('water-glasses-grid');
+  if (!grid) return;
+
+  const goal = Math.max(1, Math.round(Number(state.goals.water) || 8));
+  state.goals.water = goal;
+  state.water = clamp(Math.round(Number(state.water) || 0), 0, goal);
   grid.innerHTML = '';
-  for (let i = 0; i < state.goals.water; i++) {
+
+  for (let i = 0; i < goal; i++) {
     const glass = document.createElement('div');
     glass.className = 'water-glass ' + (i < state.water ? 'filled' : 'empty');
     glass.id = 'glass-' + i;
@@ -2414,20 +2420,32 @@ function renderWaterGlasses() {
 }
 
 function updateWater() {
-  const { water, goals } = state;
-  const p = pct(water, goals.water);
+  const goal = Math.max(1, Math.round(Number(state.goals.water) || 8));
+  const water = clamp(Math.round(Number(state.water) || 0), 0, goal);
+  state.goals.water = goal;
+  state.water = water;
+  state.dashboard.hydrationLiters = Math.round(water * 0.25 * 100) / 100;
+  const p = pct(water, goal);
+
+  const grid = document.getElementById('water-glasses-grid');
+  if (grid && grid.children.length !== goal) renderWaterGlasses();
 
   // Update UI elements
-  document.getElementById('water-consumed').textContent = water;
-  document.getElementById('water-liters').textContent = (water * 0.25).toFixed(1) + 'L';
-  document.getElementById('pb-water').style.width = p + '%';
-  document.getElementById('water-fill').style.height = p + '%';
+  setText('water-consumed', water);
+  setText('water-unit', `/ ${goal} ${goal === 1 ? 'glass' : 'glasses'}`);
+  setText('water-liters', `${state.dashboard.hydrationLiters.toFixed(1)}L`);
+  const progress = document.getElementById('pb-water');
+  const fill = document.getElementById('water-fill');
+  if (progress) progress.style.width = p + '%';
+  if (fill) fill.style.height = p + '%';
 
   // Update glasses
-  for (let i = 0; i < goals.water; i++) {
+  for (let i = 0; i < goal; i++) {
     const g = document.getElementById('glass-' + i);
     if (g) g.className = 'water-glass ' + (i < water ? 'filled' : 'empty');
   }
+
+  renderDashboardHydration();
 }
 
 /* ══════════════════════════════════════
