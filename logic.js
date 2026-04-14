@@ -49,6 +49,8 @@ const state = {
     weeklyCalories: [],
     weightTrend: []
   },
+  currentDate: '',
+  history: [],
   consumed: { calories: 0, protein: 0, carbs: 0, fat: 0 },
   burned:   0,
   water:    0,
@@ -413,6 +415,16 @@ const pct = (val, max) => {
 
 const $ = (id) => document.getElementById(id);
 
+function getTodayKey(date = new Date()) {
+  return date.toLocaleDateString('en-CA');
+}
+
+function getReadableDate(dateKey) {
+  const date = new Date(`${dateKey}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return dateKey || 'Unknown day';
+  return date.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+}
+
 function getInitials(name = 'User') {
   return name
     .trim()
@@ -642,6 +654,131 @@ function clearPersistedAppState(userId = state.auth.user?.id) {
   localStorage.removeItem(key);
 }
 
+function createDailySnapshot(dateKey = state.currentDate || getTodayKey()) {
+  return {
+    date: dateKey,
+    consumed: {
+      calories: Number(state.consumed.calories) || 0,
+      protein: Number(state.consumed.protein) || 0,
+      carbs: Number(state.consumed.carbs) || 0,
+      fat: Number(state.consumed.fat) || 0
+    },
+    burned: Number(state.burned) || 0,
+    water: Number(state.water) || 0,
+    hydrationLiters: Number(state.dashboard.hydrationLiters) || 0,
+    goals: { ...state.goals },
+    savedAt: new Date().toISOString()
+  };
+}
+
+function hasDailyActivity(snapshot) {
+  return Boolean(
+    snapshot?.consumed?.calories ||
+    snapshot?.consumed?.protein ||
+    snapshot?.consumed?.carbs ||
+    snapshot?.consumed?.fat ||
+    snapshot?.burned ||
+    snapshot?.water ||
+    snapshot?.hydrationLiters
+  );
+}
+
+function archiveCurrentDay(dateKey = state.currentDate || getTodayKey()) {
+  const snapshot = createDailySnapshot(dateKey);
+  if (!hasDailyActivity(snapshot)) return false;
+
+  const history = Array.isArray(state.history) ? state.history : [];
+  state.history = [
+    snapshot,
+    ...history.filter(item => item?.date !== snapshot.date)
+  ].slice(0, 60);
+  state.dashboard.weeklyCalories = buildWeeklyDataFromHistory();
+  return true;
+}
+
+function resetDailyTracking() {
+  state.consumed = { calories: 0, protein: 0, carbs: 0, fat: 0 };
+  state.burned = 0;
+  state.water = 0;
+  state.dashboard.hydrationLiters = 0;
+  state.selectedFood = null;
+  state.portionMultiplier = 1;
+  state.scanner = {
+    ...state.scanner,
+    mode: 'idle',
+    fileName: '',
+    imageData: '',
+    imageBlob: null,
+    uploadedFile: null,
+    isAnalyzing: false,
+    detectedFood: null,
+    nutrition: null,
+    baseResult: null,
+    scanWeight: 100,
+    errorMessage: ''
+  };
+}
+
+function applyDailyRollover() {
+  const today = getTodayKey();
+  if (!state.currentDate) {
+    state.currentDate = today;
+    return false;
+  }
+
+  if (state.currentDate === today) return false;
+
+  const archived = archiveCurrentDay(state.currentDate);
+  resetDailyTracking();
+  state.currentDate = today;
+  return archived;
+}
+
+function checkDailyRollover() {
+  if (!applyDailyRollover()) return;
+  persistAppState();
+  updateDashboard();
+  updateProfileStats();
+  renderWaterGlasses();
+  updateWater();
+  toast('New day started. Yesterday was saved to your history.');
+}
+
+function initDailyRollover() {
+  if (!state.currentDate) state.currentDate = getTodayKey();
+  setInterval(checkDailyRollover, 60 * 1000);
+}
+
+function buildWeeklyDataFromHistory() {
+  const today = new Date();
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(today);
+    date.setDate(today.getDate() - (6 - index));
+    const key = getTodayKey(date);
+    const saved = state.history.find(item => item?.date === key);
+    const isToday = key === state.currentDate;
+    return {
+      day: date.toLocaleDateString('en-IN', { weekday: 'short' }),
+      date: key,
+      consumed: isToday ? state.consumed.calories : Number(saved?.consumed?.calories) || 0,
+      burned: isToday ? state.burned : Number(saved?.burned) || 0
+    };
+  });
+}
+
+function getHistoryEntries(limit = 7) {
+  const todaySnapshot = createDailySnapshot(getTodayKey());
+  const entries = hasDailyActivity(todaySnapshot) ? [todaySnapshot] : [];
+  const history = Array.isArray(state.history) ? state.history : [];
+  history.forEach(item => {
+    if (item?.date && item.date !== todaySnapshot.date) entries.push(item);
+  });
+  return entries
+    .filter(item => item?.date)
+    .sort((a, b) => String(b.date).localeCompare(String(a.date)))
+    .slice(0, limit);
+}
+
 function resetAppState() {
   state.goals = {
     calories: 2000,
@@ -677,6 +814,8 @@ function resetAppState() {
     weeklyCalories: [],
     weightTrend: []
   };
+  state.currentDate = getTodayKey();
+  state.history = [];
   state.consumed = {
     calories: 0,
     protein: 0,
@@ -689,9 +828,18 @@ function resetAppState() {
   state.selectedFood = null;
   state.portionMultiplier = 1;
   state.scanner = {
+    mode: 'idle',
     fileName: '',
     imageData: '',
-    stream: null
+    imageBlob: null,
+    stream: null,
+    uploadedFile: null,
+    isAnalyzing: false,
+    detectedFood: null,
+    nutrition: null,
+    baseResult: null,
+    scanWeight: 100,
+    errorMessage: ''
   };
 }
 
@@ -747,10 +895,15 @@ function loadPersistedAppState(userId = state.auth.user?.id) {
       };
     }
 
+    state.currentDate = saved.currentDate || getTodayKey();
+    state.history = Array.isArray(saved.history) ? saved.history : [];
     state.burned = Number(saved.burned) || 0;
     state.water = Number(saved.water) || 0;
     state.groceryChecked = saved.groceryChecked || {};
     state.language = saved.language || state.language || 'en';
+    const rolledOver = applyDailyRollover();
+    state.dashboard.weeklyCalories = buildWeeklyDataFromHistory();
+    if (rolledOver) persistAppState();
   } catch {
     // Ignore malformed saved state.
   }
@@ -765,6 +918,8 @@ function persistAppState() {
     profile: state.profile,
     preferences: state.preferences,
     dashboard: state.dashboard,
+    currentDate: state.currentDate || getTodayKey(),
+    history: state.history,
     consumed: state.consumed,
     burned: state.burned,
     water: state.water,
@@ -1378,15 +1533,7 @@ function initDate() {
 }
 
 function getWeeklyChartData() {
-  const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  const dayIndex = new Date().getDay();
-  const mondayBasedIndex = dayIndex === 0 ? 6 : dayIndex - 1;
-
-  return labels.map((day, index) => ({
-    day,
-    consumed: index === mondayBasedIndex ? state.consumed.calories : 0,
-    burned: index === mondayBasedIndex ? state.burned : 0
-  }));
+  return buildWeeklyDataFromHistory();
 }
 
 /* ══════════════════════════════════════
@@ -1440,6 +1587,7 @@ function renderDashboardData() {
   updateCalorieRing();
   renderDashboardInsights();
   renderDashboardCharts();
+  renderHistory();
   renderMealSuggestions();
   renderDashboardSummary();
   renderDashboardHydration();
@@ -1581,6 +1729,49 @@ function renderDashboardCharts() {
       return `<div class="line-point"><span class="point-dot" style="--y:${y}px"></span><span class="point-label">W${i + 1}</span></div>`;
     }).join('');
   }
+}
+
+function renderHistory() {
+  const entries = getHistoryEntries(10);
+  const targets = ['dashboard-history-list', 'profile-history-list']
+    .map(id => $(id))
+    .filter(Boolean);
+  if (!targets.length) return;
+
+  const empty = `
+    <div class="history-empty">
+      <strong>No history yet</strong>
+      <span>Log meals, water, or workouts today. Tomorrow, today’s summary will appear here automatically.</span>
+    </div>
+  `;
+
+  const markup = entries.length ? entries.map(item => {
+    const consumed = item.consumed || {};
+    const goal = Number(item.goals?.calories) || state.goals.calories || 2000;
+    const progress = pct(consumed.calories || 0, goal);
+    const net = Math.max(0, (Number(consumed.calories) || 0) - (Number(item.burned) || 0));
+    return `
+      <div class="history-row">
+        <div class="history-date">
+          <strong>${getReadableDate(item.date)}</strong>
+          <span>${item.date === getTodayKey() ? 'Today' : item.date}</span>
+        </div>
+        <div class="history-metrics">
+          <span><b>${Math.round(consumed.calories || 0)}</b> kcal</span>
+          <span><b>${Math.round(consumed.protein || 0)}g</b> protein</span>
+          <span><b>${Number(item.hydrationLiters || 0).toFixed(1)}L</b> water</span>
+          <span><b>${Math.round(net)}</b> net</span>
+        </div>
+        <div class="history-progress" aria-label="${progress}% of calorie goal">
+          <i style="width:${progress}%"></i>
+        </div>
+      </div>
+    `;
+  }).join('') : empty;
+
+  targets.forEach(target => {
+    target.innerHTML = markup;
+  });
 }
 
 function renderMealSuggestions() {
@@ -2842,6 +3033,7 @@ function updateHealthProfileDashboard() {
   updateGoalSummary(metrics);
   renderProfileCharts(metrics);
   renderProfileInsights(metrics);
+  renderHistory();
 }
 
 function handleAvatarUpload(event) {
@@ -3132,6 +3324,7 @@ function runInitStep(fn) {
 ══════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
   runInitStep(initAuth);
+  runInitStep(initDailyRollover);
   runInitStep(initNav);
   runInitStep(initLanguage);
   runInitStep(initDate);
