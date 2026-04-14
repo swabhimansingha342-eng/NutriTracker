@@ -1,15 +1,1125 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="refresh" content="0; url=./skeleton.html" />
-    <title>NutriTrack</title>
-  </head>
-  <body>
-    <p>Opening NutriTrack...</p>
-    <script>
-      window.location.replace('./skeleton.html');
-    </script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NutriTrack – Smart Calorie Tracker</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%238fc9a3'/%3E%3Cpath d='M21 38c13 1 21-7 22-22-15 1-23 8-22 22Z' fill='none' stroke='%2307100d' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M22 38 36 24M32 51V38' stroke='%2307100d' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E" />
+  <link href="styling.css" rel="stylesheet" />
+</head>
+<body>
+  <div class="auth-shell" id="auth-shell">
+    <div class="auth-layout">
+      <div class="auth-card">
+        <div class="auth-brand">
+          <div class="auth-brand-icon">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+              <path d="M12 20c4.4-2.2 7-5.7 7-10.2V5.4L12 3 5 5.4v4.4C5 14.3 7.6 17.8 12 20z" fill="currentColor" opacity=".18"/>
+              <path d="M8.2 13.4c4.6.1 7.2-2.3 7.8-7.1-4.9.1-7.6 2.5-7.8 7.1z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M8.5 13.2l4.1-3.9M12 20v-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div>
+            <h1>NutriTrack</h1>
+            <p>Secure access for your nutrition dashboard</p>
+          </div>
+        </div>
+
+        <div class="auth-stage active" id="auth-login-stage">
+          <div class="auth-copy">
+            <p class="auth-kicker" id="auth-provider-status">Secure email access</p>
+            <h2 id="auth-title">Welcome back</h2>
+            <p id="auth-subtitle">Sign in to continue to your personal nutrition dashboard.</p>
+          </div>
+
+          <div class="auth-tabs">
+            <button class="auth-tab active" type="button" data-auth-mode="signin">Sign In</button>
+            <button class="auth-tab" type="button" data-auth-mode="signup">Create Account</button>
+          </div>
+
+          <div class="auth-form">
+            <div class="auth-alert" id="auth-alert" style="display:none"></div>
+            <div class="auth-field" id="auth-name-field">
+              <label for="auth-name">Full Name</label>
+              <input class="auth-input" id="auth-name" type="text" placeholder="Your full name" autocomplete="name" />
+            </div>
+            <div class="auth-field">
+              <label for="auth-email">Email Address</label>
+              <input class="auth-input" id="auth-email" type="email" placeholder="you@example.com" autocomplete="email" />
+            </div>
+            <div class="auth-field">
+              <label for="auth-password">Password</label>
+              <input class="auth-input" id="auth-password" type="password" placeholder="At least 6 characters" autocomplete="current-password" />
+            </div>
+            <button class="btn-primary auth-submit" id="auth-continue-btn" type="button">Sign In</button>
+            <button class="auth-link-btn" id="auth-reset-password-btn" type="button">Forgot password?</button>
+            <p class="auth-note" id="auth-note">Use your email and password to open your dashboard.</p>
+            <div class="auth-verification-actions" id="auth-verification-actions" style="display:none">
+              <button class="btn-primary" id="auth-check-verified-btn" type="button">I verified my email</button>
+              <button class="btn-ghost" id="auth-resend-verification-btn" type="button">Resend verification email</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="app-shell" style="display:none;">
+
+  <!-- ════════════════════════════════════════
+       SIDEBAR NAVIGATION
+  ════════════════════════════════════════ -->
+  <aside class="sidebar" id="sidebar">
+    <!-- Logo -->
+    <div class="sidebar-logo">
+      <div class="logo-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d="M12 20c4.4-2.2 7-5.7 7-10.2V5.4L12 3 5 5.4v4.4C5 14.3 7.6 17.8 12 20z" fill="currentColor" opacity=".18"/>
+          <path d="M8.2 13.4c4.6.1 7.2-2.3 7.8-7.1-4.9.1-7.6 2.5-7.8 7.1z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M8.5 13.2l4.1-3.9M12 20v-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <span class="logo-text">NutriTrack</span>
+    </div>
+
+    <!-- Nav Items -->
+    <nav class="sidebar-nav">
+      <a class="nav-item active" data-section="dashboard">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" fill="currentColor"/><rect x="14" y="3" width="7" height="7" rx="1.5" fill="currentColor" opacity=".5"/><rect x="3" y="14" width="7" height="7" rx="1.5" fill="currentColor" opacity=".5"/><rect x="14" y="14" width="7" height="7" rx="1.5" fill="currentColor" opacity=".5"/></svg>
+        </span>
+        <span class="nav-label">Dashboard</span>
+      </a>
+      <a class="nav-item" data-section="scanner">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </span>
+        <span class="nav-label">Food Scanner</span>
+      </a>
+      <a class="nav-item" data-section="meals">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 6V3m0 3a9 9 0 100 18A9 9 0 0012 6zm0 0V3M9 12h6M12 9v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </span>
+        <span class="nav-label">Meal Planner</span>
+      </a>
+      <a class="nav-item" data-section="coach">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 5a3 3 0 013-3h10a3 3 0 013 3v8a3 3 0 01-3 3H9l-5 4v-4a3 3 0 01-3-3V5z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8 8h8M8 12h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </span>
+        <span class="nav-label">AI Coach</span>
+      </a>
+      <a class="nav-item" data-section="mood">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M9 9h.01M15 9h.01M8 14s1.5 2 4 2 4-2 4-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </span>
+        <span class="nav-label">Mood Food</span>
+      </a>
+      <a class="nav-item" data-section="water">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0L12 2.69z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span class="nav-label">Water Tracker</span>
+      </a>
+      <a class="nav-item" data-section="calories">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 20V14M8 20V10M12 20V4M16 20V10M20 20V14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </span>
+        <span class="nav-label">Calorie Balance</span>
+      </a>
+      <a class="nav-item" data-section="training">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 7v10M18 7v10M3 10v4M21 10v4M8 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </span>
+        <span class="nav-label">Training</span>
+      </a>
+      <a class="nav-item" data-section="grocery">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span class="nav-label">Grocery List</span>
+      </a>
+      <a class="nav-item" data-section="profile">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/><path d="M5 20a7 7 0 0114 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </span>
+        <span class="nav-label">Profile</span>
+      </a>
+      <a class="nav-item" data-section="logout">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M10 17l5-5-5-5M15 12H3M21 3v18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span class="nav-label">Logout</span>
+      </a>
+    </nav>
+
+    <!-- Sidebar footer -->
+    <div class="sidebar-footer">
+      <div class="user-pill">
+        <div class="user-avatar" id="sidebar-user-avatar">A</div>
+        <div class="user-info">
+          <span class="user-name" id="sidebar-user-name">User</span>
+          <span class="user-plan">Health Profile</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ════════════════════════════════════════
+       MAIN CONTENT
+  ════════════════════════════════════════ -->
+  <main class="main-content">
+
+    <!-- Top Header Bar -->
+    <header class="topbar">
+      <button class="hamburger" id="hamburger">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-actions">
+        <select class="language-select" id="language-select" aria-label="App language">
+          <option value="en">English</option>
+          <option value="hi">हिन्दी</option>
+          <option value="es">Español</option>
+        </select>
+        <button class="topbar-btn" id="voice-btn" title="Voice Log">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 1a4 4 0 014 4v6a4 4 0 01-8 0V5a4 4 0 014-4z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M19 10a7 7 0 01-14 0M12 19v4M8 23h8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="topbar-date" id="topbar-date"></div>
+      </div>
+    </header>
+
+    <!-- Sections Container -->
+    <div class="sections-wrap">
+
+      <!-- ─── SECTION: DASHBOARD ─── -->
+      <section class="section active" id="section-dashboard">
+        <div class="dashboard-control-center">
+          <div class="dashboard-hero glass-card fade-section">
+            <div>
+              <div class="dashboard-date" id="dashboard-date-label">Today</div>
+              <h1 class="section-title" id="dashboard-greeting">Good morning, User</h1>
+              <p class="section-sub">Start logging meals and water to build today’s nutrition overview.</p>
+            </div>
+            <div class="dashboard-hero-status">
+              <span class="profile-pill" id="dashboard-status-badge">Ready to Track</span>
+              <strong id="dashboard-best-step">Add your first meal</strong>
+              <small>Best next step</small>
+            </div>
+          </div>
+
+          <div class="stats-grid dashboard-stat-grid fade-section">
+            <div class="stat-card stat-card-featured" id="stat-calories">
+              <div class="stat-icon green"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <div class="stat-body">
+                <span class="stat-label">Calories Consumed</span>
+                <span class="stat-value" id="dash-consumed">0</span>
+                <span class="stat-support" id="dash-consumed-status">No meals logged yet</span>
+              </div>
+              <div class="stat-badge green">kcal</div>
+            </div>
+            <div class="stat-card" id="stat-burned">
+              <div class="stat-icon orange"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 3s6 5 6 11a6 6 0 11-12 0c0-2.5 1.5-4.5 3-6 0 2 1 3 3 4 1-2 0-5 0-9z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <div class="stat-body">
+                <span class="stat-label">Calories Burned</span>
+                <span class="stat-value" id="dash-burned">0</span>
+                <span class="stat-support">Workout and activity</span>
+              </div>
+              <div class="stat-badge orange">kcal</div>
+            </div>
+            <div class="stat-card" id="stat-goal">
+              <div class="stat-icon blue"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg></div>
+              <div class="stat-body">
+                <span class="stat-label">Daily Goal</span>
+                <span class="stat-value" id="dash-goal">2000</span>
+                <span class="stat-support">Personal target</span>
+              </div>
+              <div class="stat-badge blue">kcal</div>
+            </div>
+            <div class="stat-card stat-card-featured" id="stat-remaining">
+              <div class="stat-icon purple"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <div class="stat-body">
+                <span class="stat-label">Remaining Calories</span>
+                <span class="stat-value" id="dash-remaining">2000</span>
+                <span class="stat-support" id="dash-remaining-status">Full goal available</span>
+              </div>
+              <div class="stat-badge purple">kcal</div>
+            </div>
+          </div>
+
+          <div class="dashboard-mid-grid fade-section">
+            <div class="macro-stack">
+              <div class="glass-card macro-card premium-macro">
+                <div class="macro-header">
+                  <span class="macro-name">Protein</span>
+                  <span class="macro-val" id="m-protein">0g / 150g</span>
+                </div>
+                <div class="macro-percent" id="macro-protein-pct">0%</div>
+                <div class="progress-track"><div class="progress-fill prot" id="pb-protein" style="width:0%"></div></div>
+                <p class="macro-hint" id="protein-hint">Add a high-protein snack today.</p>
+              </div>
+              <div class="glass-card macro-card premium-macro">
+                <div class="macro-header">
+                  <span class="macro-name">Carbs</span>
+                  <span class="macro-val" id="m-carbs">0g / 250g</span>
+                </div>
+                <div class="macro-percent" id="macro-carbs-pct">0%</div>
+                <div class="progress-track"><div class="progress-fill carb" id="pb-carbs" style="width:0%"></div></div>
+                <p class="macro-hint">Enough room for slow carbs later.</p>
+              </div>
+              <div class="glass-card macro-card premium-macro">
+                <div class="macro-header">
+                  <span class="macro-name">Fat</span>
+                  <span class="macro-val" id="m-fat">0g / 65g</span>
+                </div>
+                <div class="macro-percent" id="macro-fat-pct">0%</div>
+                <div class="progress-track"><div class="progress-fill fat" id="pb-fat" style="width:0%"></div></div>
+                <p class="macro-hint">Fat intake is under control.</p>
+              </div>
+              <div class="glass-card macro-card premium-macro hydration-mini">
+                <div class="macro-header">
+                  <span class="macro-name">Hydration</span>
+                  <span class="macro-val" id="m-water">0.0L / 3.0L</span>
+                </div>
+                <div class="macro-percent" id="macro-water-pct">0%</div>
+                <div class="progress-track"><div class="progress-fill water" id="pb-dashboard-water" style="width:0%"></div></div>
+                <p class="macro-hint">Keep sipping through the next meal.</p>
+              </div>
+            </div>
+
+            <div class="glass-card ring-card premium-ring-card">
+              <div class="card-row">
+                <h3 class="card-title">Calorie Ring</h3>
+                <span class="profile-pill" id="ring-status-pill">On track</span>
+              </div>
+              <div class="ring-wrap">
+                <svg class="ring-svg" viewBox="0 0 200 200">
+                  <circle class="ring-bg" cx="100" cy="100" r="80" />
+                  <circle class="ring-fg" id="ring-fg" cx="100" cy="100" r="80" stroke-dasharray="502" stroke-dashoffset="502" />
+                </svg>
+                <div class="ring-center">
+                  <span class="ring-pct" id="ring-pct">0%</span>
+                  <span class="ring-sub" id="ring-values">0 / 2000 kcal</span>
+                </div>
+              </div>
+              <p class="ring-status-text" id="ring-status-text">No meals logged yet</p>
+            </div>
+
+            <div class="glass-card dashboard-summary-card">
+              <div class="card-row">
+                <h3 class="card-title">Goal Progress</h3>
+                <span class="profile-pill blue">AI Summary</span>
+              </div>
+              <div class="summary-list" id="dashboard-summary-list"></div>
+            </div>
+          </div>
+
+          <div class="glass-card dashboard-ai-panel fade-section">
+            <div class="card-row">
+              <div>
+                <h3 class="card-title">AI Health Insights</h3>
+                <p class="profile-muted">Recommendations update from your calories, macros, hydration, and goal.</p>
+              </div>
+              <span class="profile-pill blue">Live coaching</span>
+            </div>
+            <div class="insights-grid" id="dashboard-ai-insights"></div>
+          </div>
+
+          <div class="dashboard-bottom-grid fade-section">
+            <div class="glass-card quick-add-card">
+              <div class="card-row">
+                <h3 class="card-title">Quick Add Food</h3>
+                <span class="profile-pill success">Updates instantly</span>
+              </div>
+              <div class="quick-food-grid" id="quick-food-grid"></div>
+            </div>
+
+            <div class="glass-card hydration-card">
+              <div class="card-row">
+                <h3 class="card-title">Hydration</h3>
+                <span class="profile-pill blue" id="hydration-status">Start tracking</span>
+              </div>
+              <div class="hydration-meter">
+                <div class="hydration-fill" id="hydration-fill"></div>
+              </div>
+              <div class="hydration-copy">
+                <strong id="hydration-value">0.0L / 3.0L</strong>
+                <span>Daily water target</span>
+              </div>
+              <div class="hydration-actions">
+                <button class="btn-ghost" type="button" data-water-add="0.25">+250 ml</button>
+                <button class="btn-primary" type="button" data-water-add="0.5">+500 ml</button>
+              </div>
+            </div>
+
+            <div class="glass-card meal-suggestion-card">
+              <div class="card-row">
+                <h3 class="card-title">Suggested Next Meal</h3>
+                <span class="profile-pill blue">AI Pick</span>
+              </div>
+              <div id="meal-suggestion"></div>
+            </div>
+          </div>
+
+          <div class="glass-card dashboard-charts-panel fade-section">
+            <div class="card-row">
+              <div>
+                <h3 class="card-title">Dashboard Analytics</h3>
+                <p class="profile-muted">Custom lightweight charts built with HTML, CSS, and JavaScript.</p>
+              </div>
+            </div>
+            <div class="profile-charts-grid">
+              <div class="mini-chart-card">
+                <h4>Weekly Calorie Intake</h4>
+                <div class="bar-chart" id="dashboard-weekly-chart"></div>
+              </div>
+              <div class="mini-chart-card">
+                <h4>Macro Distribution</h4>
+                <div class="macro-donut-wrap">
+                  <div class="macro-donut" id="dashboard-macro-donut"></div>
+                  <div class="macro-legend" id="dashboard-macro-legend"></div>
+                </div>
+              </div>
+              <div class="mini-chart-card">
+                <h4>Weight Trend</h4>
+                <div class="line-chart" id="dashboard-weight-chart"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── SECTION: FOOD SCANNER ─── -->
+      <section class="section" id="section-scanner">
+        <div class="section-header">
+          <h1 class="section-title">AI Food Scanner</h1>
+          <p class="section-sub">Use your camera or upload a photo to get estimated nutrition data</p>
+        </div>
+
+        <div class="scanner-layout">
+          <div class="glass-card scanner-upload-card">
+            <div class="upload-zone" id="upload-zone">
+              <div class="upload-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <p class="upload-text">Drop food image here or click to browse</p>
+              <span class="upload-hint">Supports JPG, PNG, WEBP</span>
+              <input type="file" id="food-file" accept="image/*" hidden />
+            </div>
+            <div class="camera-panel">
+              <div class="camera-actions">
+                <button class="btn-ghost" id="open-camera-btn" type="button">Open Camera</button>
+                <button class="btn-ghost" id="capture-camera-btn" type="button" disabled>Capture</button>
+                <button class="btn-ghost" id="close-camera-btn" type="button" disabled>Stop Camera</button>
+              </div>
+              <div class="camera-stage" id="camera-stage">
+                <video id="camera-preview" autoplay playsinline muted></video>
+                <img id="captured-preview" alt="Captured food preview" />
+                <div class="scanner-overlay" id="scanner-overlay" aria-live="polite">
+                  <span class="scanner-spinner"></span>
+                  <strong id="scanner-overlay-title">Analyzing image...</strong>
+                  <small id="scanner-overlay-subtitle">Estimating food and nutrition values</small>
+                </div>
+                <div class="camera-placeholder" id="camera-placeholder">Live camera preview will appear here</div>
+              </div>
+              <p class="camera-status" id="camera-status">Use your camera or upload a food image to scan it.</p>
+            </div>
+            <div class="scanner-food-select">
+              <p class="select-label">Or select a food to demo:</p>
+              <div class="food-chips" id="food-chips">
+                <!-- Populated by JS -->
+              </div>
+            </div>
+            <div class="scanner-quantity-row">
+              <label for="scanner-quantity">Quantity</label>
+              <div class="scanner-quantity-controls">
+                <input class="form-input" id="scanner-quantity" type="number" min="10" max="2000" step="10" value="100" />
+                <span>grams</span>
+              </div>
+            </div>
+            <button class="btn-primary" id="scan-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/></svg>
+              Scan Food
+            </button>
+            <button class="btn-ghost" id="retake-scan-btn" type="button" style="display:none">Retake / New Scan</button>
+          </div>
+
+          <div class="glass-card scanner-result-card" id="scanner-result" style="display:none">
+            <div class="result-food-name" id="result-name">–</div>
+            <div class="result-portion" id="result-portion">100g serving</div>
+            <div class="result-note" id="result-note">Estimated from your uploaded image</div>
+            <div class="result-macros">
+              <div class="result-macro-item">
+                <div class="result-macro-val green" id="res-cal">–</div>
+                <div class="result-macro-lbl">Calories</div>
+              </div>
+              <div class="result-macro-item">
+                <div class="result-macro-val blue" id="res-prot">–</div>
+                <div class="result-macro-lbl">Protein</div>
+              </div>
+              <div class="result-macro-item">
+                <div class="result-macro-val orange" id="res-carb">–</div>
+                <div class="result-macro-lbl">Carbs</div>
+              </div>
+              <div class="result-macro-item">
+                <div class="result-macro-val purple" id="res-fat">–</div>
+                <div class="result-macro-lbl">Fat</div>
+              </div>
+            </div>
+
+            <!-- Portion Estimator integrated here -->
+            <div class="portion-estimator">
+              <p class="portion-title">Smart Portion Estimator</p>
+              <div class="portion-btns">
+                <button class="portion-btn" data-mul="0.75">Small</button>
+                <button class="portion-btn active" data-mul="1">Medium</button>
+                <button class="portion-btn" data-mul="1.5">Large</button>
+              </div>
+            </div>
+            <button class="btn-primary" id="add-to-log-btn" disabled>Add to Daily Log</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── SECTION: MEAL RECOMMENDATIONS ─── -->
+      <section class="section" id="section-meals">
+        <div class="section-header">
+          <h1 class="section-title">Smart Meal Planner</h1>
+          <p class="section-sub">Personalised meals based on your calorie goals</p>
+        </div>
+
+        <div class="meal-filters">
+          <button class="filter-btn active" data-filter="all">All</button>
+          <button class="filter-btn" data-filter="breakfast">Breakfast</button>
+          <button class="filter-btn" data-filter="lunch">Lunch</button>
+          <button class="filter-btn" data-filter="dinner">Dinner</button>
+          <button class="filter-btn" data-filter="snack">Snack</button>
+        </div>
+
+        <div class="meal-grid" id="meal-grid">
+          <!-- Populated by JS -->
+        </div>
+
+        <div class="glass-card weekly-plan-cta">
+          <div class="cta-text">
+            <h3>AI Meal Plan Builder</h3>
+            <p>Build a balanced daily plan from your calorie target, macros, and current progress</p>
+          </div>
+          <div class="ai-plan-controls">
+            <select class="form-input compact-select" id="meal-plan-goal">
+              <option value="balanced">Balanced</option>
+              <option value="high-protein">High Protein</option>
+              <option value="light">Light Cut</option>
+            </select>
+            <button class="btn-primary" id="gen-weekly-btn">Generate AI Plan</button>
+          </div>
+        </div>
+
+        <div class="ai-meal-plan" id="ai-meal-plan">
+          <!-- Populated by JS -->
+        </div>
+      </section>
+
+      <!-- ─── SECTION: AI COACH ─── -->
+      <section class="section" id="section-coach">
+        <div class="section-header">
+          <h1 class="section-title">AI Nutrition Coach</h1>
+          <p class="section-sub">Ask about meals, calories, hydration, workouts, or use another language</p>
+        </div>
+
+        <div class="coach-layout">
+          <div class="glass-card coach-card">
+            <div class="chat-messages" id="chat-messages"></div>
+            <div class="chat-suggestions">
+              <button class="chat-suggestion" data-chat-prompt="Suggest a meal for my remaining calories">Meal idea</button>
+              <button class="chat-suggestion" data-chat-prompt="What workout should I do today?">Workout</button>
+              <button class="chat-suggestion" data-chat-prompt="How is my hydration today?">Hydration</button>
+            </div>
+            <div class="chat-input-row">
+              <input class="form-input" id="chat-input" type="text" placeholder="Ask your coach..." />
+              <button class="btn-primary" id="chat-send-btn" type="button">Send</button>
+            </div>
+          </div>
+
+          <div class="glass-card coach-insight-card">
+            <h3 class="card-title">Today’s Focus</h3>
+            <div class="coach-insights" id="coach-insights"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── SECTION: MOOD FOOD ─── -->
+      <section class="section" id="section-mood">
+        <div class="section-header">
+          <h1 class="section-title">Mood-Based Food</h1>
+          <p class="section-sub">Choose how you're feeling and get tailored food suggestions</p>
+        </div>
+
+        <div class="mood-picker">
+          <div class="mood-btn active" data-mood="energetic">
+            <div class="mood-emoji">⚡</div>
+            <span>Energetic</span>
+          </div>
+          <div class="mood-btn" data-mood="tired">
+            <div class="mood-emoji">😴</div>
+            <span>Tired</span>
+          </div>
+          <div class="mood-btn" data-mood="stressed">
+            <div class="mood-emoji">😤</div>
+            <span>Stressed</span>
+          </div>
+          <div class="mood-btn" data-mood="low">
+            <div class="mood-emoji">😔</div>
+            <span>Low Energy</span>
+          </div>
+          <div class="mood-btn" data-mood="happy">
+            <div class="mood-emoji">😊</div>
+            <span>Happy</span>
+          </div>
+          <div class="mood-btn" data-mood="focused">
+            <div class="mood-emoji">🎯</div>
+            <span>Focused</span>
+          </div>
+          <div class="mood-btn" data-mood="anxious">
+            <div class="mood-emoji">🌿</div>
+            <span>Anxious</span>
+          </div>
+          <div class="mood-btn" data-mood="sore">
+            <div class="mood-emoji">💪</div>
+            <span>Sore</span>
+          </div>
+          <div class="mood-btn" data-mood="cravings">
+            <div class="mood-emoji">🍫</div>
+            <span>Cravings</span>
+          </div>
+          <div class="mood-btn" data-mood="recovery">
+            <div class="mood-emoji">🛌</div>
+            <span>Recovery</span>
+          </div>
+        </div>
+
+        <div class="mood-result-header" id="mood-result-header"></div>
+        <div class="mood-food-grid" id="mood-food-grid">
+          <!-- Populated by JS -->
+        </div>
+      </section>
+
+      <!-- ─── SECTION: WATER TRACKER ─── -->
+      <section class="section" id="section-water">
+        <div class="section-header">
+          <h1 class="section-title">Water Intake</h1>
+          <p class="section-sub">Stay hydrated throughout the day</p>
+        </div>
+
+        <div class="water-layout">
+          <div class="glass-card water-main-card">
+            <div class="water-bottle-wrap">
+              <div class="water-bottle">
+                <div class="water-fill" id="water-fill" style="height:0%"></div>
+              </div>
+              <div class="water-stats">
+                <span class="water-consumed" id="water-consumed">0</span>
+                <span class="water-unit">/ 8 glasses</span>
+                <span class="water-liters" id="water-liters">0.0L</span>
+              </div>
+            </div>
+            <div class="progress-track water-track">
+              <div class="progress-fill water" id="pb-water" style="width:0%"></div>
+            </div>
+            <div class="water-btns">
+              <button class="btn-ghost" id="water-remove">– Glass</button>
+              <button class="btn-primary" id="water-add">+ Add Glass</button>
+            </div>
+          </div>
+
+          <div class="glass-card water-log-card">
+            <h3 class="card-title">Hydration Log</h3>
+            <div class="water-glasses-grid" id="water-glasses-grid">
+              <!-- 8 glass icons populated by JS -->
+            </div>
+            <div class="water-tips">
+              <h4>💡 Hydration Tips</h4>
+              <ul>
+                <li>Drink a glass right after waking up</li>
+                <li>Set reminders every 2 hours</li>
+                <li>Drink before each meal</li>
+                <li>Replace soda with sparkling water</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── SECTION: CALORIE BALANCE ─── -->
+      <section class="section" id="section-calories">
+        <div class="section-header">
+          <h1 class="section-title">Calorie Balance</h1>
+          <p class="section-sub">Consumed vs burned visualisation</p>
+        </div>
+
+        <div class="calorie-layout">
+          <div class="glass-card calorie-chart-card">
+            <h3 class="card-title">Weekly Overview</h3>
+            <div class="bar-chart" id="bar-chart">
+              <!-- Populated by JS -->
+            </div>
+            <div class="chart-legend">
+              <span class="legend-dot green"></span><span>Consumed</span>
+              <span class="legend-dot orange"></span><span>Burned</span>
+            </div>
+          </div>
+
+          <div class="calorie-side">
+            <div class="glass-card balance-summary-card">
+              <h3 class="card-title">Today's Balance</h3>
+              <div class="balance-bars">
+                <div class="balance-row">
+                  <span class="balance-label">Consumed</span>
+                  <div class="balance-track">
+                    <div class="balance-fill green" id="bal-consumed" style="width:0%"></div>
+                  </div>
+                  <span class="balance-num" id="bal-con-num">0</span>
+                </div>
+                <div class="balance-row">
+                  <span class="balance-label">Burned</span>
+                  <div class="balance-track">
+                    <div class="balance-fill orange" id="bal-burned" style="width:0%"></div>
+                  </div>
+                  <span class="balance-num" id="bal-burn-num">0</span>
+                </div>
+                <div class="balance-row">
+                  <span class="balance-label">Net</span>
+                  <div class="balance-track">
+                    <div class="balance-fill blue" id="bal-net" style="width:0%"></div>
+                  </div>
+                  <span class="balance-num" id="bal-net-num">0</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="glass-card exercise-log-card">
+              <h3 class="card-title">Log Exercise</h3>
+              <div class="exercise-chips" id="exercise-chips">
+                <!-- Populated by JS -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── SECTION: TRAINING RECOMMENDATIONS ─── -->
+      <section class="section" id="section-training">
+        <div class="section-header">
+          <h1 class="section-title">Exercise Recommendations</h1>
+          <p class="section-sub">Training suggestions based on your nutrition balance and goal</p>
+        </div>
+
+        <div class="training-controls glass-card">
+          <div class="form-group">
+            <label>Training Goal</label>
+            <select class="form-input" id="training-goal">
+              <option value="fat-loss">Fat Loss</option>
+              <option value="strength">Strength</option>
+              <option value="mobility">Mobility</option>
+              <option value="endurance">Endurance</option>
+              <option value="recovery">Recovery</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Intensity</label>
+            <select class="form-input" id="training-intensity">
+              <option value="moderate">Moderate</option>
+              <option value="low">Low</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+          <button class="btn-primary" id="refresh-training-btn" type="button">Refresh Plan</button>
+        </div>
+
+        <div class="training-grid" id="training-grid">
+          <!-- Populated by JS -->
+        </div>
+      </section>
+
+      <!-- ─── SECTION: GROCERY LIST ─── -->
+      <section class="section" id="section-grocery">
+        <div class="section-header">
+          <h1 class="section-title">Smart Grocery List</h1>
+          <p class="section-sub">Auto-generated based on your meal plan</p>
+        </div>
+
+        <div class="grocery-layout">
+          <div class="glass-card grocery-gen-card">
+            <h3 class="card-title">Generate from Meals</h3>
+            <p class="card-desc">Select meals to include in your grocery list</p>
+            <div class="grocery-meal-select" id="grocery-meal-select">
+              <!-- Populated by JS -->
+            </div>
+            <div class="grocery-custom-add">
+              <input class="form-input" id="custom-grocery-item" type="text" placeholder="Add your own item, e.g. tofu 250g" />
+              <button class="btn-ghost" id="add-custom-grocery-btn" type="button">Add Item</button>
+            </div>
+            <button class="btn-primary" id="gen-grocery-btn">Generate Grocery List</button>
+          </div>
+
+          <div class="glass-card grocery-list-card" id="grocery-list-card">
+            <div class="grocery-header-row">
+              <h3 class="card-title">Your Grocery List</h3>
+              <button class="btn-ghost-sm" id="clear-grocery-btn">Clear</button>
+            </div>
+            <div class="grocery-categories" id="grocery-categories">
+              <div class="grocery-empty">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <p>No items yet. Generate a list from your meals.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── SECTION: PROFILE ─── -->
+      <section class="section" id="section-profile">
+        <div class="section-header">
+          <h1 class="section-title">Health Control Center</h1>
+          <p class="section-sub">Manage your body data, goals, AI recommendations, and privacy settings</p>
+        </div>
+
+        <div class="profile-control-center">
+          <article class="glass-card profile-hero-card fade-section">
+            <div class="profile-hero-main">
+              <label class="profile-avatar-upload" for="profile-avatar-input" aria-label="Upload profile image">
+                <input id="profile-avatar-input" type="file" accept="image/*" hidden />
+                <span class="profile-avatar xl" id="profile-avatar">U</span>
+                <span class="avatar-camera">Upload</span>
+              </label>
+              <div class="profile-hero-copy">
+                <div class="profile-kicker">Verified NutriTracker profile</div>
+                <h2 class="profile-name-xl" id="profile-display-name">User</h2>
+                <p class="profile-email" id="profile-email">Add your email</p>
+                <div class="profile-badge-row">
+                  <span class="profile-pill success">Verified</span>
+                  <span class="profile-pill blue">Health Profile</span>
+                  <span class="profile-pill" id="profile-health-status">Balanced focus</span>
+                </div>
+              </div>
+            </div>
+            <div class="profile-hero-actions">
+              <button class="btn-primary" id="edit-profile-btn" type="button">Edit Profile</button>
+              <button class="btn-ghost" id="download-report-btn" type="button">Download Report</button>
+            </div>
+          </article>
+
+          <section class="profile-grid">
+            <article class="glass-card profile-panel profile-span-2 fade-section">
+              <div class="profile-card-head">
+                <div>
+                  <h3 class="card-title">Personal Information</h3>
+                  <p class="profile-muted">These values power BMI, BMR, calories, protein, water, and goal predictions.</p>
+                </div>
+                <span class="profile-pill blue">AI ready</span>
+              </div>
+              <div class="profile-form-grid">
+                <div class="form-group">
+                  <label for="set-full-name">Full name</label>
+                  <input type="text" id="set-full-name" class="form-input" placeholder="Enter your full name" />
+                </div>
+                <div class="form-group">
+                  <label for="set-email">Email</label>
+                  <input type="email" id="set-email" class="form-input" placeholder="Enter your email" />
+                </div>
+                <div class="form-group">
+                  <label for="set-age">Age</label>
+                  <input type="number" id="set-age" class="form-input" placeholder="28" min="12" max="100" />
+                </div>
+                <div class="form-group">
+                  <label for="set-gender">Gender</label>
+                  <select id="set-gender" class="form-input">
+                    <option value="">Select</option>
+                    <option value="female">Female</option>
+                    <option value="male">Male</option>
+                    <option value="other">Other / Prefer not to say</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="set-height">Height (cm)</label>
+                  <input type="number" id="set-height" class="form-input" placeholder="175" min="80" max="240" />
+                </div>
+                <div class="form-group">
+                  <label for="set-weight">Weight (kg)</label>
+                  <input type="number" id="set-weight" value="" class="form-input" placeholder="72" min="25" max="250" />
+                </div>
+                <div class="form-group">
+                  <label for="set-activity-level">Activity level</label>
+                  <select id="set-activity-level" class="form-input">
+                    <option value="">Select</option>
+                    <option value="sedentary">Sedentary</option>
+                    <option value="light">Lightly active</option>
+                    <option value="moderate">Moderately active</option>
+                    <option value="active">Very active</option>
+                    <option value="athlete">Athlete</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="set-diet-preference">Diet preference</label>
+                  <select id="set-diet-preference" class="form-input">
+                    <option value="">Select</option>
+                    <option value="balanced">Balanced</option>
+                    <option value="vegetarian">Vegetarian</option>
+                    <option value="vegan">Vegan</option>
+                    <option value="high-protein">High protein</option>
+                    <option value="indian">Indian meals</option>
+                  </select>
+                </div>
+                <div class="form-group profile-full-row">
+                  <label for="set-allergies">Allergies / health conditions</label>
+                  <textarea id="set-allergies" class="form-input profile-textarea" placeholder="Peanuts, lactose intolerance, diabetes, hypertension..."></textarea>
+                </div>
+              </div>
+            </article>
+
+            <article class="glass-card profile-panel fade-section">
+              <div class="profile-card-head">
+                <div>
+                  <h3 class="card-title">Profile Completion</h3>
+                  <p class="profile-muted">Finish your health setup for better AI guidance.</p>
+                </div>
+                <strong id="completion-percent">0%</strong>
+              </div>
+              <div class="completion-ring-wrap">
+                <div class="completion-ring" id="completion-ring"><span id="completion-ring-label">0%</span></div>
+              </div>
+              <div class="completion-bar"><span id="completion-bar-fill"></span></div>
+              <ul class="missing-list" id="missing-list"></ul>
+            </article>
+
+            <article class="glass-card profile-panel profile-span-3 fade-section">
+              <div class="profile-card-head">
+                <div>
+                  <h3 class="card-title">Health Metrics</h3>
+                  <p class="profile-muted">Calculated instantly from your profile values.</p>
+                </div>
+                <span class="profile-pill success">Live calculations</span>
+              </div>
+              <div class="health-metrics-grid">
+                <div class="metric-card"><span class="metric-icon green">BMI</span><strong id="metric-bmi">--</strong><small id="metric-bmi-status">Add height and weight</small></div>
+                <div class="metric-card"><span class="metric-icon blue">BMR</span><strong id="metric-bmr">--</strong><small>Estimated resting burn</small></div>
+                <div class="metric-card"><span class="metric-icon green">KCAL</span><strong id="metric-calorie-need">--</strong><small>Daily calorie need</small></div>
+                <div class="metric-card"><span class="metric-icon blue">H2O</span><strong id="metric-water-goal">--</strong><small>Water target</small></div>
+                <div class="metric-card"><span class="metric-icon yellow">PRO</span><strong id="metric-protein-goal">--</strong><small>Protein target</small></div>
+              </div>
+            </article>
+
+            <article class="glass-card profile-panel profile-span-2 fade-section">
+              <div class="profile-card-head">
+                <div>
+                  <h3 class="card-title">Goal Intelligence</h3>
+                  <p class="profile-muted">AI-style goal planning from your target and weekly pace.</p>
+                </div>
+              </div>
+              <div class="profile-form-grid compact">
+                <div class="form-group">
+                  <label for="set-goal-type">Goal type</label>
+                  <select id="set-goal-type" class="form-input">
+                    <option value="maintain">Maintain</option>
+                    <option value="fat-loss">Fat loss</option>
+                    <option value="muscle-gain">Muscle gain</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="set-target-weight">Target weight (kg)</label>
+                  <input type="number" id="set-target-weight" class="form-input" placeholder="68" min="25" max="250" />
+                </div>
+                <div class="form-group">
+                  <label for="set-weekly-target">Weekly target (kg)</label>
+                  <input type="number" id="set-weekly-target" class="form-input" placeholder="0.5" min="0.1" max="1.5" step="0.1" />
+                </div>
+                <div class="form-group">
+                  <label for="set-calorie-goal">Daily calorie goal (kcal)</label>
+                  <input type="number" id="set-calorie-goal" value="2000" class="form-input" />
+                </div>
+              </div>
+              <div class="goal-summary">
+                <div><span>Estimated timeline</span><strong id="goal-timeline">--</strong></div>
+                <div><span>Recommended target</span><strong id="goal-calorie-target">--</strong></div>
+                <div><span>Weekly pace</span><strong id="goal-weekly-summary">--</strong></div>
+              </div>
+            </article>
+
+            <article class="glass-card profile-panel fade-section">
+              <div class="profile-card-head">
+                <div>
+                  <h3 class="card-title">Daily Goals</h3>
+                  <p class="profile-muted">Fine tune macro and hydration targets.</p>
+                </div>
+              </div>
+              <div class="settings-form">
+                <div class="form-group">
+                  <label for="set-protein-goal">Protein goal (g)</label>
+                  <input type="number" id="set-protein-goal" value="150" class="form-input" />
+                </div>
+                <div class="form-group">
+                  <label for="set-carbs-goal">Carbs goal (g)</label>
+                  <input type="number" id="set-carbs-goal" value="250" class="form-input" />
+                </div>
+                <div class="form-group">
+                  <label for="set-fat-goal">Fat goal (g)</label>
+                  <input type="number" id="set-fat-goal" value="65" class="form-input" />
+                </div>
+                <div class="form-group">
+                  <label for="set-water-goal">Water goal (glasses)</label>
+                  <input type="number" id="set-water-goal" value="8" class="form-input" />
+                </div>
+                <button class="btn-primary" id="save-settings-btn">Save Health Profile</button>
+              </div>
+            </article>
+
+            <article class="glass-card profile-panel profile-span-3 fade-section">
+              <div class="profile-card-head">
+                <div>
+                  <h3 class="card-title">Progress Visualization</h3>
+                  <p class="profile-muted">Lightweight charts built with HTML, CSS, and JavaScript.</p>
+                </div>
+              </div>
+              <div class="profile-charts-grid">
+                <div class="mini-chart-card">
+                  <h4>Weight Progress</h4>
+                  <div class="line-chart" id="weight-chart"></div>
+                </div>
+                <div class="mini-chart-card">
+                  <h4>Weekly Calories</h4>
+                  <div class="bar-chart" id="calorie-chart"></div>
+                </div>
+                <div class="mini-chart-card">
+                  <h4>Macro Targets</h4>
+                  <div class="macro-donut-wrap">
+                    <div class="macro-donut" id="macro-donut"></div>
+                    <div class="macro-legend" id="macro-legend"></div>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <article class="glass-card profile-panel profile-span-3 fade-section">
+              <div class="profile-card-head">
+                <div>
+                  <h3 class="card-title">AI Health Insights</h3>
+                  <p class="profile-muted">Recommendations update from your profile and today’s logged data.</p>
+                </div>
+                <span class="profile-pill blue">Smart coaching</span>
+              </div>
+              <div class="insights-grid" id="profile-ai-insights"></div>
+            </article>
+
+            <article class="glass-card profile-panel profile-span-2 fade-section">
+              <div class="profile-card-head">
+                <div>
+                  <h3 class="card-title">Notification Preferences</h3>
+                  <p class="profile-muted">Control reminders and AI nudges.</p>
+                </div>
+              </div>
+              <div class="toggle-list">
+                <label class="toggle-row"><span>Meal reminders</span><input type="checkbox" class="pref-toggle" data-pref="mealReminders" checked /><i></i></label>
+                <label class="toggle-row"><span>Water reminders</span><input type="checkbox" class="pref-toggle" data-pref="waterReminders" checked /><i></i></label>
+                <label class="toggle-row"><span>Workout reminders</span><input type="checkbox" class="pref-toggle" data-pref="workoutReminders" checked /><i></i></label>
+                <label class="toggle-row"><span>Weekly summary</span><input type="checkbox" class="pref-toggle" data-pref="weeklySummary" checked /><i></i></label>
+                <label class="toggle-row"><span>AI recommendation notifications</span><input type="checkbox" class="pref-toggle" data-pref="aiRecommendations" checked /><i></i></label>
+              </div>
+            </article>
+
+            <article class="glass-card profile-panel fade-section">
+              <div class="profile-card-head">
+                <div>
+                  <h3 class="card-title">Privacy & Security</h3>
+                  <p class="profile-muted">Account controls and export actions.</p>
+                </div>
+              </div>
+              <div class="security-actions">
+                <button class="btn-ghost" id="change-password-btn" type="button">Change password</button>
+                <button class="btn-ghost" id="export-data-btn" type="button">Export data</button>
+                <button class="btn-ghost" id="download-report-btn-2" type="button">Download report</button>
+                <button class="btn-danger" id="delete-account-btn" type="button">Delete account</button>
+              </div>
+            </article>
+
+            <article class="glass-card streak-card profile-span-3 fade-section">
+              <h3 class="card-title">Your Streaks</h3>
+              <div class="streak-list" id="streak-list"></div>
+            </article>
+          </section>
+        </div>
+      </section>
+
+      <!-- ─── SECTION: LOGOUT ─── -->
+      <section class="section" id="section-logout">
+        <div class="logout-page">
+          <article class="glass-card logout-card">
+            <div class="logout-icon">
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none"><path d="M10 17l5-5-5-5M15 12H3M21 3v18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <p class="profile-kicker">Secure logout</p>
+            <h1 class="section-title">Ready to sign out?</h1>
+            <p class="section-sub">Your local NutriTracker progress and preferences are saved for this account.</p>
+            <div class="logout-actions">
+              <button class="btn-primary" id="logout-cancel-btn" type="button">Stay in dashboard</button>
+              <button class="btn-danger" id="logout-confirm-btn" type="button">Log out</button>
+            </div>
+          </article>
+        </div>
+      </section>
+
+    </div><!-- end .sections-wrap -->
+  </main>
+
+  <!-- ════════════════════════════════════════
+       BOTTOM MOBILE NAV
+  ════════════════════════════════════════ -->
+  <nav class="mobile-nav">
+    <a class="mob-nav-item active" data-section="dashboard">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" fill="currentColor"/><rect x="14" y="3" width="7" height="7" rx="1.5" fill="currentColor" opacity=".4"/><rect x="3" y="14" width="7" height="7" rx="1.5" fill="currentColor" opacity=".4"/><rect x="14" y="14" width="7" height="7" rx="1.5" fill="currentColor" opacity=".4"/></svg>
+      <span>Home</span>
+    </a>
+    <a class="mob-nav-item" data-section="scanner">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <span>Scan</span>
+    </a>
+    <a class="mob-nav-item" data-section="meals">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 6V3m0 3a9 9 0 100 18A9 9 0 0012 6z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <span>Meals</span>
+    </a>
+    <a class="mob-nav-item" data-section="coach">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 5a3 3 0 013-3h10a3 3 0 013 3v8a3 3 0 01-3 3H9l-5 4v-4a3 3 0 01-3-3V5z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+      <span>Coach</span>
+    </a>
+    <a class="mob-nav-item" data-section="water">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0L12 2.69z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Water</span>
+    </a>
+    <a class="mob-nav-item" data-section="training">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 7v10M18 7v10M3 10v4M21 10v4M8 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <span>Train</span>
+    </a>
+  </nav>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Voice Modal -->
+  <div class="modal-overlay" id="voice-modal" style="display:none">
+    <div class="modal glass-card">
+      <div class="modal-icon pulse-ring">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><path d="M12 1a4 4 0 014 4v6a4 4 0 01-8 0V5a4 4 0 014-4z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M19 10a7 7 0 01-14 0M12 19v4M8 23h8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <p class="modal-title">Listening…</p>
+      <p class="modal-sub" id="voice-transcript">Say something like "Add 200 calories of chicken"</p>
+      <button class="btn-ghost" id="voice-cancel">Cancel</button>
+    </div>
+  </div>
+
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="logic.js"></script>
+</body>
 </html>
