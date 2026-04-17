@@ -2824,3 +2824,236 @@ body {
     font-size: 0.86rem;
   }
 }
+
+/* Device fit refinements: preserve structure, prevent overflow on narrow screens */
+html,
+body,
+#app-shell,
+.main-content,
+.sections-wrap,
+.section,
+.glass-card {
+  max-width: 100%;
+}
+
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+}
+
+.main-content,
+.section,
+.glass-card,
+.dashboard-control-center,
+.scanner-layout,
+.scanner-upload-card,
+.scanner-result-card,
+.topbar-title,
+.topbar-actions,
+.stat-card,
+.macro-card,
+.profile-panel {
+  min-width: 0;
+}
+
+.section-title,
+.section-sub,
+.card-title,
+.result-food-name,
+.result-note,
+.camera-status,
+.food-chip,
+.nav-label,
+.user-name {
+  overflow-wrap: anywhere;
+}
+
+.scanner-layout,
+.dashboard-mid-grid,
+.dashboard-bottom-grid,
+.profile-grid,
+.water-layout,
+.calorie-layout,
+.grocery-layout {
+  width: 100%;
+}
+
+.camera-stage,
+#camera-preview,
+#captured-preview {
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  body {
+    overflow-x: hidden;
+  }
+
+  .topbar {
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .topbar-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .topbar-actions {
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .language-select {
+    width: min(34vw, 116px);
+    padding: 0 8px;
+  }
+
+  .topbar-date {
+    display: none;
+  }
+
+  .sections-wrap {
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  .glass-card {
+    padding: 18px;
+  }
+
+  .upload-zone {
+    padding: 28px 16px;
+  }
+
+  .camera-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .camera-actions .btn-ghost,
+  .scanner-upload-card > .btn-primary,
+  .scanner-upload-card > .btn-ghost {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .camera-stage,
+  #camera-preview,
+  #captured-preview {
+    min-height: 220px;
+  }
+
+  .scanner-quantity-controls {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .food-chips {
+    gap: 7px;
+  }
+
+  .food-chip {
+    max-width: 100%;
+  }
+
+  .result-macros {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .portion-btns {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .mobile-nav {
+    padding: 8px max(8px, env(safe-area-inset-left)) calc(8px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-right));
+  }
+
+  .mob-nav-item {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 7px 4px;
+  }
+
+  .mob-nav-item span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 520px) {
+  .auth-shell {
+    align-items: flex-start;
+    padding: 16px 12px;
+  }
+
+  .auth-card {
+    padding: 18px;
+  }
+
+  .auth-brand h1 {
+    font-size: 1.3rem;
+  }
+
+  .auth-copy h2 {
+    font-size: 1.45rem;
+  }
+
+  .sections-wrap {
+    padding: 16px 12px 96px;
+  }
+
+  .topbar {
+    height: 58px;
+    padding: 0 12px;
+  }
+
+  .topbar-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .section-header {
+    margin-bottom: 18px;
+  }
+
+  .glass-card {
+    padding: 16px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-card {
+    align-items: flex-start;
+  }
+
+  .quick-add-card .quick-food-grid,
+  .macro-stack,
+  .result-macros,
+  .portion-btns,
+  .meal-suggestion-meta,
+  .health-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .camera-stage,
+  #camera-preview,
+  #captured-preview {
+    min-height: 190px;
+  }
+
+  .result-food-name {
+    font-size: 1.35rem;
+  }
+
+  .result-macro-item {
+    padding: 14px 8px;
+  }
+}

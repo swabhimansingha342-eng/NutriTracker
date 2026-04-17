@@ -1,0 +1,1370 @@
+import { useState, useEffect, useRef } from "react";
+
+const COLORS = {
+  bg: "#F7F8FA",
+  card: "#FFFFFF",
+  green: "#2DC653",
+  greenLight: "#E8F9ED",
+  greenDark: "#1A9E3F",
+  accent: "#1DB954",
+  navy: "#0D1B2A",
+  grey: "#8A94A6",
+  greyLight: "#EFF1F5",
+  greyMid: "#CDD2DB",
+  red: "#FF4757",
+  orange: "#FF6B35",
+  blue: "#4A90D9",
+  purple: "#7B61FF",
+  yellow: "#FFD60A",
+  text: "#1A202C",
+  textMid: "#4A5568",
+  textLight: "#A0AEC0",
+};
+
+const FONTS = {
+  display: "'Sora', sans-serif",
+  body: "'DM Sans', sans-serif",
+};
+
+const globalStyles = `
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: ${COLORS.bg}; font-family: ${FONTS.body}; }
+  ::-webkit-scrollbar { display: none; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+  @keyframes pulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.06); } }
+  @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+  @keyframes ripple { 0% { transform:scale(0); opacity:0.6; } 100% { transform:scale(4); opacity:0; } }
+  @keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+  @keyframes slideIn { from { transform:translateX(100%); } to { transform:translateX(0); } }
+  @keyframes bounce { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-6px); } }
+  @keyframes fillBar { from { width:0; } to { width:var(--target-width); } }
+  @keyframes countUp { from { opacity:0; transform:scale(0.8); } to { opacity:1; transform:scale(1); } }
+  @keyframes waveAnim { 0%,100% { d:path("M0,50 C150,20 300,80 450,50 C600,20 750,80 900,50 L900,100 L0,100 Z"); } 50% { d:path("M0,50 C150,80 300,20 450,50 C600,80 750,20 900,50 L900,100 L0,100 Z"); } }
+`;
+
+// Icons as SVG components
+const Icons = {
+  Home: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+  Camera: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>,
+  Utensils: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>,
+  Droplet: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>,
+  Heart: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>,
+  ShoppingCart: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>,
+  User: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+  Zap: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
+  Smile: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>,
+  Mic: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>,
+  Trophy: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="8 21 12 17 16 21"/><line x1="12" y1="17" x2="12" y2="11"/><path d="M7 4H4a2 2 0 0 0-2 2v2a4 4 0 0 0 4 4"/><path d="M17 4h3a2 2 0 0 1 2 2v2a4 4 0 0 1-4 4"/><rect x="7" y="2" width="10" height="9" rx="2"/></svg>,
+  Plus: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  ChevronRight: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>,
+  Check: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+  Bell: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>,
+  Flame: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>,
+  Apple: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20.94c1.5 0 2.75 1.06 4 1.06 3 0 6-8 6-12.22A4.91 4.91 0 0 0 17 5c-2.22 0-4 1.44-5 2-1-.56-2.78-2-5-2a4.9 4.9 0 0 0-5 4.78C2 14 5 22 8 22c1.25 0 2.5-1.06 4-1.06z"/><path d="M10 2c1 .5 2 2 2 5"/></svg>,
+  Settings: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 0 0 4.93 19.07"/><path d="M4.93 4.93A10 10 0 0 1 19.07 19.07"/><path d="M19.5 12a7.5 7.5 0 0 1-7.5 7.5"/><path d="M4.5 12a7.5 7.5 0 0 1 7.5-7.5"/></svg>,
+  Star: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+  Lock: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
+  Mail: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,
+  Activity: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
+};
+
+// ─── Circular Progress ───────────────────────────────────────────────────────
+const CircularProgress = ({ value, max, size = 120, stroke = 10, color = COLORS.green, bg = COLORS.greyLight, label, sublabel }) => {
+  const r = (size - stroke) / 2;
+  const circ = 2 * Math.PI * r;
+  const pct = Math.min(value / max, 1);
+  const dash = pct * circ;
+  return (
+    <div style={{ position: "relative", width: size, height: size, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={bg} strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={stroke}
+          strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
+          style={{ transition: "stroke-dasharray 0.8s cubic-bezier(0.4,0,0.2,1)" }} />
+      </svg>
+      <div style={{ position: "absolute", textAlign: "center" }}>
+        <div style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: size * 0.18, color: COLORS.text, lineHeight: 1 }}>{label}</div>
+        {sublabel && <div style={{ fontSize: size * 0.1, color: COLORS.grey, marginTop: 2, fontFamily: FONTS.body }}>{sublabel}</div>}
+      </div>
+    </div>
+  );
+};
+
+// ─── Progress Bar ────────────────────────────────────────────────────────────
+const ProgressBar = ({ value, max, color = COLORS.green, height = 8, bg = COLORS.greyLight, animated = true }) => {
+  const pct = Math.min((value / max) * 100, 100);
+  return (
+    <div style={{ background: bg, borderRadius: 99, height, overflow: "hidden", width: "100%" }}>
+      <div style={{
+        height: "100%", width: `${pct}%`, background: `linear-gradient(90deg, ${color}, ${color}CC)`,
+        borderRadius: 99, transition: animated ? "width 0.8s cubic-bezier(0.4,0,0.2,1)" : "none",
+        boxShadow: `0 0 8px ${color}66`
+      }} />
+    </div>
+  );
+};
+
+// ─── Macro Badge ─────────────────────────────────────────────────────────────
+const MacroBadge = ({ label, value, unit = "g", color }) => (
+  <div style={{ background: `${color}14`, borderRadius: 14, padding: "10px 16px", flex: 1, textAlign: "center", animation: "fadeUp 0.4s ease both" }}>
+    <div style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: 18, color }}>{value}{unit}</div>
+    <div style={{ fontSize: 11, color: COLORS.grey, marginTop: 2, textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</div>
+  </div>
+);
+
+// ─── Screen Wrapper ──────────────────────────────────────────────────────────
+const Screen = ({ children, style = {} }) => (
+  <div style={{
+    minHeight: "calc(100vh - 70px)", overflowY: "auto", padding: "0 0 80px",
+    animation: "fadeIn 0.3s ease both", ...style
+  }}>{children}</div>
+);
+
+// ─── Section Header ──────────────────────────────────────────────────────────
+const SectionHeader = ({ title, action, actionLabel }) => (
+  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", marginBottom: 12 }}>
+    <h2 style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: 17, color: COLORS.text }}>{title}</h2>
+    {action && <button onClick={action} style={{ background: "none", border: "none", color: COLORS.green, fontFamily: FONTS.body, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>{actionLabel || "See all"}</button>}
+  </div>
+);
+
+// ─── Card ─────────────────────────────────────────────────────────────────────
+const Card = ({ children, style = {}, onClick }) => (
+  <div onClick={onClick} style={{
+    background: COLORS.card, borderRadius: 20, padding: "18px 20px",
+    boxShadow: "0 2px 16px rgba(0,0,0,0.06)", cursor: onClick ? "pointer" : "default",
+    transition: "transform 0.15s ease, box-shadow 0.15s ease",
+    ...style
+  }} onMouseDown={e => { if (onClick) e.currentTarget.style.transform = "scale(0.98)"; }}
+    onMouseUp={e => { if (onClick) e.currentTarget.style.transform = "scale(1)"; }}>
+    {children}
+  </div>
+);
+
+// ─── Pill Button ─────────────────────────────────────────────────────────────
+const PillBtn = ({ label, icon, active, onClick, color = COLORS.green }) => (
+  <button onClick={onClick} style={{
+    display: "flex", alignItems: "center", gap: 8, padding: "10px 18px",
+    borderRadius: 99, border: `1.5px solid ${active ? color : COLORS.greyMid}`,
+    background: active ? color : COLORS.card, color: active ? "#fff" : COLORS.textMid,
+    fontFamily: FONTS.body, fontWeight: 600, fontSize: 13, cursor: "pointer",
+    transition: "all 0.2s ease", whiteSpace: "nowrap",
+    boxShadow: active ? `0 4px 14px ${color}44` : "none"
+  }}>
+    {icon && <span style={{ opacity: 0.9 }}>{icon}</span>}
+    {label}
+  </button>
+);
+
+// ─── LOGIN SCREEN ─────────────────────────────────────────────────────────────
+const LoginScreen = ({ onLogin }) => {
+  const [isSignup, setIsSignup] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+
+  const inputStyle = {
+    width: "100%", padding: "14px 18px", borderRadius: 14, border: `1.5px solid ${COLORS.greyMid}`,
+    background: COLORS.greyLight, fontFamily: FONTS.body, fontSize: 15, color: COLORS.text,
+    outline: "none", transition: "border-color 0.2s ease"
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", background: `linear-gradient(160deg, #F0FFF4 0%, #FFFFFF 50%, #F7F8FA 100%)`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 24px" }}>
+      <style>{globalStyles}</style>
+      {/* Logo */}
+      <div style={{ textAlign: "center", marginBottom: 40, animation: "fadeUp 0.5s ease both" }}>
+        <div style={{ width: 72, height: 72, borderRadius: 24, background: `linear-gradient(135deg, ${COLORS.green}, ${COLORS.greenDark})`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", boxShadow: `0 8px 24px ${COLORS.green}44` }}>
+          <span style={{ fontSize: 34 }}>🥗</span>
+        </div>
+        <h1 style={{ fontFamily: FONTS.display, fontWeight: 800, fontSize: 26, color: COLORS.text, letterSpacing: "-0.02em" }}>NutriTrack</h1>
+        <p style={{ color: COLORS.grey, fontSize: 14, marginTop: 4 }}>Smart Calorie Tracker</p>
+      </div>
+
+      {/* Card */}
+      <div style={{ background: COLORS.card, borderRadius: 28, padding: "32px 24px", boxShadow: "0 8px 40px rgba(0,0,0,0.10)", width: "100%", maxWidth: 400, animation: "fadeUp 0.5s 0.1s ease both", opacity: 0, animationFillMode: "forwards" }}>
+        {/* Toggle */}
+        <div style={{ display: "flex", background: COLORS.greyLight, borderRadius: 14, padding: 4, marginBottom: 28 }}>
+          {["Sign In", "Sign Up"].map((t, i) => (
+            <button key={t} onClick={() => setIsSignup(i === 1)} style={{
+              flex: 1, padding: "10px", borderRadius: 11, border: "none", cursor: "pointer",
+              background: (isSignup ? i === 1 : i === 0) ? COLORS.card : "transparent",
+              fontFamily: FONTS.display, fontWeight: 600, fontSize: 14,
+              color: (isSignup ? i === 1 : i === 0) ? COLORS.text : COLORS.grey,
+              boxShadow: (isSignup ? i === 1 : i === 0) ? "0 2px 8px rgba(0,0,0,0.08)" : "none",
+              transition: "all 0.2s ease"
+            }}>{t}</button>
+          ))}
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {isSignup && (
+            <div style={{ position: "relative" }}>
+              <span style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: COLORS.grey }}><Icons.User /></span>
+              <input placeholder="Full name" value={name} onChange={e => setName(e.target.value)} style={{ ...inputStyle, paddingLeft: 48 }} />
+            </div>
+          )}
+          <div style={{ position: "relative" }}>
+            <span style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: COLORS.grey }}><Icons.Mail /></span>
+            <input placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} style={{ ...inputStyle, paddingLeft: 48 }} />
+          </div>
+          <div style={{ position: "relative" }}>
+            <span style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: COLORS.grey }}><Icons.Lock /></span>
+            <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} style={{ ...inputStyle, paddingLeft: 48 }} />
+          </div>
+
+          <button onClick={onLogin} style={{
+            width: "100%", padding: "16px", borderRadius: 16, border: "none",
+            background: `linear-gradient(135deg, ${COLORS.green}, ${COLORS.greenDark})`,
+            color: "#fff", fontFamily: FONTS.display, fontWeight: 700, fontSize: 16,
+            cursor: "pointer", marginTop: 8, boxShadow: `0 8px 24px ${COLORS.green}44`,
+            transition: "transform 0.15s ease"
+          }} onMouseDown={e => e.currentTarget.style.transform = "scale(0.98)"}
+            onMouseUp={e => e.currentTarget.style.transform = "scale(1)"}>
+            {isSignup ? "Create Account" : "Sign In"} →
+          </button>
+        </div>
+
+        <div style={{ textAlign: "center", marginTop: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+            <div style={{ flex: 1, height: 1, background: COLORS.greyMid }} />
+            <span style={{ color: COLORS.grey, fontSize: 12 }}>or continue with</span>
+            <div style={{ flex: 1, height: 1, background: COLORS.greyMid }} />
+          </div>
+          <button onClick={onLogin} style={{
+            width: "100%", padding: "14px", borderRadius: 14, border: `1.5px solid ${COLORS.greyMid}`,
+            background: COLORS.card, fontFamily: FONTS.body, fontWeight: 600, fontSize: 14,
+            color: COLORS.text, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10
+          }}>
+            <span style={{ fontSize: 20 }}>🌐</span> Continue with Google
+          </button>
+        </div>
+      </div>
+
+      <p style={{ color: COLORS.grey, fontSize: 12, marginTop: 24, textAlign: "center", lineHeight: 1.6 }}>
+        By signing in you agree to our <span style={{ color: COLORS.green }}>Terms</span> and <span style={{ color: COLORS.green }}>Privacy Policy</span>
+      </p>
+    </div>
+  );
+};
+
+// ─── HOME DASHBOARD ───────────────────────────────────────────────────────────
+const HomeScreen = ({ setScreen }) => {
+  const caloriesGoal = 2000;
+  const caloriesEaten = 1340;
+  const caloriesBurned = 380;
+  const net = caloriesEaten - caloriesBurned;
+  const waterGoal = 8;
+  const waterCurrent = 5;
+
+  return (
+    <Screen>
+      {/* Header */}
+      <div style={{ background: `linear-gradient(160deg, #0D1B2A 0%, #1A3A2A 100%)`, padding: "52px 20px 60px", position: "relative", overflow: "hidden" }}>
+        {/* Decorative circles */}
+        <div style={{ position: "absolute", top: -40, right: -40, width: 180, height: 180, borderRadius: "50%", background: `${COLORS.green}18`, pointerEvents: "none" }} />
+        <div style={{ position: "absolute", bottom: -20, left: -30, width: 120, height: 120, borderRadius: "50%", background: `${COLORS.green}10`, pointerEvents: "none" }} />
+
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "relative" }}>
+          <div style={{ animation: "fadeUp 0.4s ease both" }}>
+            <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, fontFamily: FONTS.body, marginBottom: 4 }}>Good morning 👋</p>
+            <h1 style={{ fontFamily: FONTS.display, fontWeight: 800, fontSize: 24, color: "#fff", letterSpacing: "-0.02em" }}>Alex Johnson</h1>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8 }}>
+              <span style={{ fontSize: 16 }}>🔥</span>
+              <span style={{ color: COLORS.green, fontFamily: FONTS.display, fontWeight: 700, fontSize: 14 }}>12-day streak!</span>
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 10, animation: "fadeUp 0.4s 0.1s ease both", opacity: 0, animationFillMode: "forwards" }}>
+            <button style={{ width: 42, height: 42, borderRadius: 13, background: "rgba(255,255,255,0.12)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", cursor: "pointer" }}><Icons.Bell /></button>
+            <div style={{ width: 42, height: 42, borderRadius: 13, background: `linear-gradient(135deg, ${COLORS.green}, ${COLORS.greenDark})`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: `0 4px 12px ${COLORS.green}55` }}
+              onClick={() => setScreen("profile")}>
+              <span style={{ fontSize: 18 }}>👤</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Calorie Hero Card */}
+      <div style={{ padding: "0 20px", marginTop: -36 }}>
+        <Card style={{ animation: "fadeUp 0.4s 0.15s ease both", opacity: 0, animationFillMode: "forwards" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div>
+              <p style={{ color: COLORS.grey, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Net Calories Today</p>
+              <div style={{ fontFamily: FONTS.display, fontWeight: 800, fontSize: 44, color: COLORS.text, letterSpacing: "-0.03em", lineHeight: 1 }}>{net.toLocaleString()}</div>
+              <p style={{ color: COLORS.grey, fontSize: 13, marginTop: 4 }}>of {caloriesGoal.toLocaleString()} kcal goal</p>
+              <ProgressBar value={net} max={caloriesGoal} height={6} style={{ marginTop: 12 }} />
+            </div>
+            <CircularProgress value={net} max={caloriesGoal} size={100} stroke={9} label={`${Math.round((net / caloriesGoal) * 100)}%`} sublabel="complete" />
+          </div>
+
+          <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
+            <MacroBadge label="Eaten" value={caloriesEaten.toLocaleString()} unit="" color={COLORS.orange} />
+            <MacroBadge label="Burned" value={caloriesBurned} unit="" color={COLORS.blue} />
+            <MacroBadge label="Remaining" value={caloriesGoal - net} unit="" color={COLORS.green} />
+          </div>
+        </Card>
+      </div>
+
+      {/* Quick Actions */}
+      <div style={{ padding: "24px 20px 0", animation: "fadeUp 0.4s 0.2s ease both", opacity: 0, animationFillMode: "forwards" }}>
+        <SectionHeader title="Quick Actions" />
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          {[
+            { icon: "📷", label: "Scan Food", sub: "AI Scanner", color: COLORS.green, screen: "scanner" },
+            { icon: "🎤", label: "Voice Log", sub: "Say what you ate", color: COLORS.purple, screen: "voice" },
+            { icon: "💧", label: "Water", sub: `${waterCurrent}/${waterGoal} glasses`, color: COLORS.blue, screen: "water" },
+            { icon: "🏋️", label: "Workout", sub: "Log activity", color: COLORS.orange, screen: "calories" },
+          ].map(({ icon, label, sub, color, screen }) => (
+            <Card key={label} onClick={() => setScreen(screen)} style={{ padding: "16px", display: "flex", alignItems: "center", gap: 14, cursor: "pointer" }}>
+              <div style={{ width: 44, height: 44, borderRadius: 14, background: `${color}18`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>{icon}</div>
+              <div>
+                <div style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: 14, color: COLORS.text }}>{label}</div>
+                <div style={{ fontSize: 12, color: COLORS.grey, marginTop: 2 }}>{sub}</div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      {/* Water Tracker Mini */}
+      <div style={{ padding: "24px 20px 0", animation: "fadeUp 0.4s 0.25s ease both", opacity: 0, animationFillMode: "forwards" }}>
+        <SectionHeader title="Water Intake" action={() => setScreen("water")} />
+        <Card>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+            <div>
+              <div style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: 22, color: COLORS.blue }}>{waterCurrent} <span style={{ fontSize: 14, color: COLORS.grey, fontWeight: 400 }}>/ {waterGoal} glasses</span></div>
+              <div style={{ fontSize: 12, color: COLORS.grey, marginTop: 2 }}>💧 {waterCurrent * 250}ml / {waterGoal * 250}ml</div>
+            </div>
+            <div style={{ fontSize: 36 }}>💧</div>
+          </div>
+          <ProgressBar value={waterCurrent} max={waterGoal} color={COLORS.blue} height={10} />
+          <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+            {Array.from({ length: waterGoal }).map((_, i) => (
+              <div key={i} style={{ flex: 1, height: 32, borderRadius: 8, background: i < waterCurrent ? `linear-gradient(180deg, #7EC8E3, ${COLORS.blue})` : COLORS.greyLight, transition: "background 0.3s ease" }} />
+            ))}
+          </div>
+        </Card>
+      </div>
+
+      {/* Macros */}
+      <div style={{ padding: "24px 20px 0", animation: "fadeUp 0.4s 0.3s ease both", opacity: 0, animationFillMode: "forwards" }}>
+        <SectionHeader title="Today's Macros" />
+        <Card>
+          {[
+            { label: "Protein", value: 68, max: 120, color: COLORS.orange, icon: "💪" },
+            { label: "Carbs", value: 145, max: 250, color: COLORS.blue, icon: "🌾" },
+            { label: "Fat", value: 42, max: 65, color: COLORS.purple, icon: "🥑" },
+          ].map(({ label, value, max, color, icon }) => (
+            <div key={label} style={{ marginBottom: 16 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ fontSize: 16 }}>{icon}</span>
+                  <span style={{ fontFamily: FONTS.body, fontWeight: 600, fontSize: 14, color: COLORS.text }}>{label}</span>
+                </div>
+                <span style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: 14, color }}>{value}g <span style={{ color: COLORS.grey, fontWeight: 400 }}>/ {max}g</span></span>
+              </div>
+              <ProgressBar value={value} max={max} color={color} height={7} />
+            </div>
+          ))}
+        </Card>
+      </div>
+
+      {/* Today's Meals */}
+      <div style={{ padding: "24px 20px 0", animation: "fadeUp 0.4s 0.35s ease both", opacity: 0, animationFillMode: "forwards" }}>
+        <SectionHeader title="Today's Meals" action={() => setScreen("meals")} />
+        {[
+          { meal: "Breakfast", food: "Oatmeal + Berries", cal: 320, time: "7:30 AM", emoji: "🥣" },
+          { meal: "Lunch", food: "Grilled Chicken Salad", cal: 480, time: "12:45 PM", emoji: "🥗" },
+          { meal: "Snack", food: "Greek Yogurt", cal: 150, time: "3:30 PM", emoji: "🍶" },
+          { meal: "Dinner", food: "Pasta + Vegetables", cal: 390, time: "7:00 PM", emoji: "🍝" },
+        ].map(({ meal, food, cal, time, emoji }) => (
+          <Card key={meal} style={{ marginBottom: 10, padding: "14px 16px", display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 14, background: COLORS.greenLight, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>{emoji}</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: 13, color: COLORS.textMid, textTransform: "uppercase", letterSpacing: "0.04em" }}>{meal}</div>
+              <div style={{ fontFamily: FONTS.body, fontSize: 15, color: COLORS.text, marginTop: 1 }}>{food}</div>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: 16, color: COLORS.green }}>{cal}</div>
+              <div style={{ fontSize: 11, color: COLORS.grey }}>{time}</div>
+            </div>
+          </Card>
+        ))}
+      </div>
+    </Screen>
+  );
+};
+
+// ─── FOOD SCANNER ─────────────────────────────────────────────────────────────
+const ScannerScreen = () => {
+  const [state, setState] = useState("idle"); // idle, scanning, result, voice
+  const [voiceText, setVoiceText] = useState("");
+  const [isListening, setIsListening] = useState(false);
+  const foods = [
+    { name: "Caesar Salad", cal: 320, protein: 12, carbs: 18, fat: 24, emoji: "🥗", confidence: 94 },
+    { name: "Grilled Salmon", cal: 412, protein: 46, carbs: 2, fat: 22, emoji: "🐟", confidence: 97 },
+    { name: "Avocado Toast", cal: 280, protein: 8, carbs: 32, fat: 15, emoji: "🥑", confidence: 91 },
+  ];
+  const [result, setResult] = useState(null);
+
+  const scan = () => {
+    setState("scanning");
+    setTimeout(() => {
+      setResult(foods[Math.floor(Math.random() * foods.length)]);
+      setState("result");
+    }, 2000);
+  };
+
+  const startVoice = () => {
+    setState("voice");
+    setIsListening(true);
+    setTimeout(() => {
+      setVoiceText("I ate two eggs and a banana for breakfast");
+      setIsListening(false);
+      setTimeout(() => setState("voiceResult"), 500);
+    }, 2000);
+  };
+
+  return (
+    <Screen>
+      <div style={{ padding: "52px 20px 20px" }}>
+        <h1 style={{ fontFamily: FONTS.display, fontWeight: 800, fontSize: 26, color: COLORS.text }}>AI Food Scanner</h1>
+        <p style={{ color: COLORS.grey, fontSize: 14, marginTop: 4 }}>Snap a photo or use voice to log meals</p>
+      </div>
+
+      {state === "idle" && (
+        <div style={{ padding: "0 20px", animation: "fadeIn 0.3s ease" }}>
+          {/* Camera Preview Mock */}
+          <div style={{
+            background: `linear-gradient(135deg, ${COLORS.navy}, #1A3A4A)`, borderRadius: 24, height: 260, position: "relative",
+            overflow: "hidden", marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "center",
+            cursor: "pointer", boxShadow: "0 8px 32px rgba(0,0,0,0.2)"
+          }} onClick={scan}>
+            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ width: 200, height: 140, border: `2px solid ${COLORS.green}`, borderRadius: 16, position: "relative" }}>
+                {[["0 0", "borderTopLeftRadius: 8"], ["0 auto 0 0", ""], ["auto 0 0 auto", ""], ["auto 0 0 0", ""]].map((_, i) => (
+                  <div key={i} style={{ position: "absolute", width: 20, height: 20, borderColor: COLORS.green, borderStyle: "solid", borderWidth: 0,
+                    ...(i === 0 ? { top: -2, left: -2, borderTopWidth: 3, borderLeftWidth: 3, borderTopLeftRadius: 4 } :
+                       i === 1 ? { top: -2, right: -2, borderTopWidth: 3, borderRightWidth: 3, borderTopRightRadius: 4 } :
+                       i === 2 ? { bottom: -2, right: -2, borderBottomWidth: 3, borderRightWidth: 3, borderBottomRightRadius: 4 } :
+                                 { bottom: -2, left: -2, borderBottomWidth: 3, borderLeftWidth: 3, borderBottomLeftRadius: 4 }) }} />
+                ))}
+              </div>
+            </div>
+            <div style={{ position: "absolute", inset: 0, background: "radial-gradient(circle at center, transparent 40%, rgba(0,0,0,0.4))" }} />
+            <div style={{ position: "relative", textAlign: "center" }}>
+              <div style={{ fontSize: 56 }}>📷</div>
+              <p style={{ color: "rgba(255,255,255,0.8)", fontFamily: FONTS.display, fontWeight: 600, fontSize: 16, marginTop: 8 }}>Tap to Scan Food</p>
+              <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, marginTop: 4 }}>AI will estimate calories instantly</p>
+            </div>
+          </div>
+
+          {/* Recent Scans */}
+          <SectionHeader title="Recent Scans" />
+          {foods.slice(0, 2).map(f => (
+            <Card key={f.name} style={{ marginBottom: 10, display: "flex", alignItems: "center", gap: 14 }}>
+              <div style={{ width: 48, height: 48, borderRadius: 16, background: COLORS.greenLight, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26 }}>{f.emoji}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: 15, color: COLORS.text }}>{f.name}</div>
+                <div style={{ fontSize: 12, color: COLORS.grey, marginTop: 2 }}>P: {f.protein}g · C: {f.carbs}g · F: {f.fat}g</div>
+              </div>
+              <div style={{ fontFamily: FONTS.display, fontWeight: 800, fontSize: 18, color: COLORS.green }}>{f.cal}</div>
+            </Card>
+          ))}
+
+          {/* Voice Log Button */}
+          <Card style={{ marginTop: 12, background: `linear-gradient(135deg, ${COLORS.purple}18, ${COLORS.purple}08)`, border: `1.5px solid ${COLORS.purple}30`, cursor: "pointer" }} onClick={startVoice}>
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              <div style={{ width: 50, height: 50, borderRadius: 16, background: `linear-gradient(135deg, ${COLORS.purple}, #5A41CC)`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 14px ${COLORS.purple}44` }}>
+                <span style={{ color: "#fff" }}><Icons.Mic /></span>
+              </div>
+              <div>
+                <div style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: 15, color: COLORS.text }}>Voice Food Log</div>
+                <div style={{ fontSize: 12, color: COLORS.grey, marginTop: 2 }}>"I ate two eggs and a banana"</div>
+              </div>
+              <Icons.ChevronRight />
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {state === "scanning" && (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 20px", animation: "fadeIn 0.3s ease" }}>
+          <div style={{ width: 100, height: 100, borderRadius: "50%", background: COLORS.greenLight, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24 }}>
+            <div style={{ width: 60, height: 60, borderRadius: "50%", border: `4px solid ${COLORS.green}`, borderTopColor: "transparent", animation: "spin 0.8s linear infinite" }} />
+          </div>
+          <h2 style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: 20, color: COLORS.text }}>Analyzing Food...</h2>
+          <p style={{ color: COLORS.grey, fontSize: 14, marginTop: 8, textAlign: "center" }}>AI is identifying ingredients and calculating nutrition</p>
+        </div>
+      )}
+
+      {state === "result" && result && (
+        <div style={{ padding: "0 20px", animation: "fadeUp 0.4s ease" }}>
+          <Card style={{ background: `linear-gradient(135deg, ${COLORS.navy}, #1A3A2A)`, marginBottom: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              <div style={{ fontSize: 56 }}>{result.emoji}</div>
+              <div>
+                <div style={{ fontSize: 11, color: `${COLORS.green}`, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>✓ {result.confidence}% Match</div>
+                <div style={{ fontFamily: FONTS.display, fontWeight: 800, fontSize: 22, color: "#fff" }}>{result.name}</div>
+                <div style={{ fontFamily: FONTS.display, fontWeight: 800, fontSize: 36, color: COLORS.green, marginTop: 4 }}>{result.cal} <span style={{ fontSize: 16, fontWeight: 400, color: "rgba(255,255,255,0.6)" }}>kcal</span></div>
+              </div>
+            </div>
+          </Card>
+
+          <Card style={{ marginBottom: 16 }}>
+            <div style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: 16, marginBottom: 16, color: COLORS.text }}>Nutrition Breakdown</div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <MacroBadge label="Protein" value={result.protein} color={COLORS.orange} />
+              <MacroBadge label="Carbs" value={result.carbs} color={COLORS.blue} />
+              <MacroBadge label="Fat" value={result.fat} color={COLORS.purple} />
+            </div>
+
+            <div style={{ marginTop: 20 }}>
+              {[{ label: "Protein", value: result.protein, max: 50, color: COLORS.orange },
+                { label: "Carbs", value: result.carbs, max: 80, color: COLORS.blue },
+                { label: "Fat", value: result.fat, max: 40, color: COLORS.purple }].map(m => (
+                <div key={m.label} style={{ marginBottom: 12 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                    <span style={{ fontSize: 13, color: COLORS.textMid, fontWeight: 500 }}>{m.label}</span>
+                    <span style={{ fontSize: 13, fontFamily: FONTS.display, fontWeight: 700, color: m.color }}>{m.value}g</span>
+                  </div>
+                  <ProgressBar value={m.value} max={m.max} color={m.color} height={6} />
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <div style={{ display: "flex", gap: 10 }}>
+            <button onClick={() => setState("idle")} style={{
+              flex: 1, padding: "15px", borderRadius: 16, border: `1.5px solid ${COLORS.greyMid}`,
+              background: COLORS.card, fontFamily: FONTS.display, fontWeight: 600, fontSize: 15, color: COLORS.text, cursor: "pointer"
+            }}>Retake</button>
+            <button style={{
+              flex: 2, padding: "15px", borderRadius: 16, border: "none",
+              background: `linear-gradient(135deg, ${COLORS.green}, ${COLORS.greenDark})`,
+              fontFamily: FONTS.display, fontWeight: 700, fontSize: 15, color: "#fff", cursor: "pointer",
+              boxShadow: `0 6px 20px ${COLORS.green}44`
+            }}>+ Add to Log</button>
+          </div>
+        </div>
+      )}
+
+      {(state === "voice" || state === "voiceResult") && (
+        <div style={{ padding: "0 20px", animation: "fadeIn 0.3s ease" }}>
+          <Card style={{ textAlign: "center", padding: "40px 24px" }}>
+            <div style={{ width: 80, height: 80, borderRadius: "50%", background: isListening ? `${COLORS.purple}18` : COLORS.greenLight, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", animation: isListening ? "pulse 1s ease infinite" : "none", border: isListening ? `3px solid ${COLORS.purple}` : "none" }}>
+              <span style={{ color: isListening ? COLORS.purple : COLORS.green, fontSize: 24 }}>{isListening ? <Icons.Mic /> : "✓"}</span>
+            </div>
+            <h2 style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: 20, color: COLORS.text }}>
+              {isListening ? "Listening..." : "Got it!"}
+            </h2>
+            {voiceText && <p style={{ color: COLORS.textMid, fontSize: 15, marginTop: 12, lineHeight: 1.6, fontStyle: "italic" }}>"{voiceText}"</p>}
+            {state === "voiceResult" && (
+              <div style={{ marginTop: 20, animation: "fadeUp 0.4s ease" }}>
+                <div style={{ background: COLORS.greenLight, borderRadius: 14, padding: "12px 16px", textAlign: "left" }}>
+                  <div style={{ fontFamily: FONTS.display, fontWeight: 700, color: COLORS.text, marginBottom: 8 }}>Detected foods:</div>
+                  {[{ name: "2 Eggs", cal: 140, emoji: "🥚" }, { name: "1 Banana", cal: 89, emoji: "🍌" }].map(f => (
+                    <div key={f.name} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                      <span style={{ fontSize: 20 }}>{f.emoji}</span>
+                      <span style={{ flex: 1, color: COLORS.text, fontSize: 14 }}>{f.name}</span>
+                      <span style={{ fontFamily: FONTS.display, fontWeight: 700, color: COLORS.green }}>{f.cal} kcal</span>
+                    </div>
+                  ))}
+                  <div style={{ borderTop: `1px solid ${COLORS.greenDark}22`, marginTop: 8, paddingTop: 8, display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ fontFamily: FONTS.display, fontWeight: 700, color: COLORS.text }}>Total</span>
+                    <span style={{ fontFamily: FONTS.display, fontWeight: 800, color: COLORS.green }}>229 kcal</span>
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
+                  <button onClick={() => setState("idle")} style={{ flex: 1, padding: "14px", borderRadius: 14, border: `1.5px solid ${COLORS.greyMid}`, background: COLORS.card, fontFamily: FONTS.display, fontWeight: 600, fontSize: 14, color: COLORS.text, cursor: "pointer" }}>Cancel</button>
+                  <button style={{ flex: 2, padding: "14px", borderRadius: 14, border: "none", background: `linear-gradient(135deg, ${COLORS.green}, ${COLORS.greenDark})`, fontFamily: FONTS.display, fontWeight: 700, fontSize: 14, color: "#fff", cursor: "pointer" }}>Log Breakfast</button>
+                </div>
+              </div>
+            )}
+          </Card>
+        </div>
+      )}
+    </Screen>
+  );
+};
+
+// ─── MEAL RECOMMENDATIONS ──────────────────────────────────────────────────────
+const MealsScreen = ({ setScreen }) => {
+  const [diet, setDiet] = useState("balanced");
+  const [day, setDay] = useState(0);
+  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+  const meals = {
+    balanced: [
+      { meal: "Breakfast", items: ["Greek yogurt with granola", "Mixed berries", "Green tea"], cal: 340, emoji: "🥣" },
+      { meal: "Lunch", items: ["Grilled chicken breast", "Quinoa", "Steamed broccoli"], cal: 480, emoji: "🍗" },
+      { meal: "Snack", items: ["Almonds (20g)", "Apple slices"], cal: 180, emoji: "🍎" },
+      { meal: "Dinner", items: ["Baked salmon", "Sweet potato", "Arugula salad"], cal: 520, emoji: "🐟" },
+    ],
+    keto: [
+      { meal: "Breakfast", items: ["Scrambled eggs (3)", "Avocado", "Bacon strips"], cal: 420, emoji: "🥚" },
+      { meal: "Lunch", items: ["Tuna salad", "Lettuce wraps", "Cheese cubes"], cal: 390, emoji: "🥗" },
+      { meal: "Snack", items: ["Walnuts (30g)", "String cheese"], cal: 210, emoji: "🧀" },
+      { meal: "Dinner", items: ["Ribeye steak", "Asparagus", "Butter sauce"], cal: 680, emoji: "🥩" },
+    ],
+    vegan: [
+      { meal: "Breakfast", items: ["Smoothie bowl", "Chia seeds", "Coconut milk"], cal: 320, emoji: "🥤" },
+      { meal: "Lunch", items: ["Lentil soup", "Whole wheat bread", "Mixed salad"], cal: 440, emoji: "🍲" },
+      { meal: "Snack", items: ["Hummus with veggies", "Pita chips"], cal: 190, emoji: "🥙" },
+      { meal: "Dinner", items: ["Tofu stir-fry", "Brown rice", "Edamame"], cal: 490, emoji: "🍜" },
+    ]
+  };
+
+  const activeMeals = meals[diet];
+  const total = activeMeals.reduce((s, m) => s + m.cal, 0);
+
+  return (
+    <Screen>
+      <div style={{ padding: "52px 20px 20px" }}>
+        <h1 style={{ fontFamily: FONTS.display, fontWeight: 800, fontSize: 26, color: COLORS.text }}>Meal Plan</h1>
+        <p style={{ color: COLORS.grey, fontSize: 14, marginTop: 4 }}>Personalized for your 2,000 kcal goal</p>
+      </div>
+
+      {/* Diet Filter */}
+      <div style={{ padding: "0 20px 16px", display: "flex", gap: 8, overflowX: "auto", paddingRight: 20 }}>
+        {[["balanced", "⚖️ Balanced"], ["keto", "🥑 Keto"], ["vegan", "🌱 Vegan"]].map(([k, l]) => (
+          <PillBtn key={k} label={l} active={diet === k} onClick={() => setDiet(k)} />
+        ))}
+      </div>
+
+      {/* Day Selector */}
+      <div style={{ padding: "0 20px 20px", display: "flex", gap: 8 }}>
+        {days.map((d, i) => (
+          <button key={d} onClick={() => setDay(i)} style={{
+            flex: 1, padding: "8px 2px", borderRadius: 12, border: "none",
+            background: day === i ? `linear-gradient(135deg, ${COLORS.green}, ${COLORS.greenDark})` : COLORS.card,
+            color: day === i ? "#fff" : COLORS.grey,
+            fontFamily: FONTS.display, fontWeight: day === i ? 700 : 500, fontSize: 12, cursor: "pointer",
+            boxShadow: day === i ? `0 4px 12px ${COLORS.green}44` : "0 1px 6px rgba(0,0,0,0.06)"
+          }}>{d}</button>
+        ))}
+      </div>
+
+      {/* Summary Card */}
+      <div style={{ padding: "0 20px 16px" }}>
+        <Card style={{ background: `linear-gradient(135deg, ${COLORS.navy}, #1A3A2A)` }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 12 }}>Daily Total</p>
+              <div style={{ fontFamily: FONTS.display, fontWeight: 800, fontSize: 36, color: "#fff", letterSpacing: "-0.02em" }}>{total} <span style={{ fontSize: 16, color: COLORS.green }}>kcal</span></div>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ display: "flex", gap: 8 }}>
+                <div style={{ background: "rgba(255,255,255,0.1)", borderRadius: 10, padding: "6px 12px", textAlign: "center" }}>
+                  <div style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: 16, color: COLORS.orange }}>142g</div>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)" }}>Protein</div>
+                </div>
+                <div style={{ background: "rgba(255,255,255,0.1)", borderRadius: 10, padding: "6px 12px", textAlign: "center" }}>
+                  <div style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: 16, color: COLORS.blue }}>210g</div>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)" }}>Carbs</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Meal Cards */}
+      <div style={{ padding: "0 20px" }}>
+        {activeMeals.map(({ meal, items, cal, emoji }, idx) => (
+          <Card key={meal} style={{ marginBottom: 12, animation: `fadeUp 0.4s ${idx * 0.08}s ease both`, opacity: 0, animationFillMode: "forwards" }}>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 46, height: 46, borderRadius: 14, background: COLORS.greenLight, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>{emoji}</div>
+                <div>
+                  <div style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: 16, color: COLORS.text }}>{meal}</div>
+                  <div style={{ fontFamily: FONTS.display, fontWeight: 800, fontSize: 14, color: COLORS.green, marginTop: 2 }}>{cal} kcal</div>
+                </div>
+              </div>
+              <button style={{ background: COLORS.greenLight, border: "none", borderRadius: 10, padding: "6px 12px", color: COLORS.greenDark, fontFamily: FONTS.body, fontWeight: 600, fontSize: 12, cursor: "pointer" }}>Add</button>
+            </div>
+            {items.map(item => (
+              <div key={item} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                <div style={{ width: 6, height: 6, borderRadius: "50%", background: COLORS.green, flexShrink: 0 }} />
+                <span style={{ fontSize: 14, color: COLORS.textMid }}>{item}</span>
+              </div>
+            ))}
+          </Card>
+        ))}
+      </div>
+
+      {/* Grocery List CTA */}
+      <div style={{ padding: "8px 20px 0" }}>
+        <Card onClick={() => setScreen("grocery")} style={{ background: `linear-gradient(135deg, ${COLORS.green}18, ${COLORS.blue}10)`, border: `1.5px solid ${COLORS.green}30`, cursor: "pointer", display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{ width: 44, height: 44, borderRadius: 14, background: `linear-gradient(135deg, ${COLORS.green}, ${COLORS.greenDark})`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 20 }}>🛒</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: 15, color: COLORS.text }}>Generate Grocery List</div>
+            <div style={{ fontSize: 12, color: COLORS.grey, marginTop: 2 }}>Based on this week's plan</div>
+          </div>
+          <Icons.ChevronRight />
+        </Card>
+      </div>
+    </Screen>
+  );
+};
+
+// ─── MOOD SCREEN ──────────────────────────────────────────────────────────────
+const MoodScreen = () => {
+  const [mood, setMood] = useState(null);
+
+  const moods = [
+    { key: "energetic", emoji: "⚡", label: "Energetic", color: COLORS.yellow, bg: "#FFF9E0" },
+    { key: "stressed", emoji: "😤", label: "Stressed", color: COLORS.red, bg: "#FFF0F0" },
+    { key: "tired", emoji: "😴", label: "Tired", color: COLORS.blue, bg: "#EEF4FF" },
+    { key: "happy", emoji: "😊", label: "Happy", color: COLORS.green, bg: COLORS.greenLight },
+    { key: "lowenergy", emoji: "🔋", label: "Low Energy", color: COLORS.orange, bg: "#FFF4EE" },
+    { key: "focused", emoji: "🎯", label: "Focused", color: COLORS.purple, bg: "#F3F0FF" },
+  ];
+
+  const suggestions = {
+    energetic: { title: "Fuel Your Energy", desc: "You're on fire! Maintain it with clean fuel.", foods: [
+      { name: "Overnight oats", cal: 280, emoji: "🥣", reason: "Sustained energy" },
+      { name: "Banana smoothie", cal: 190, emoji: "🍌", reason: "Quick carbs" },
+      { name: "Trail mix", cal: 160, emoji: "🥜", reason: "Energy & healthy fats" },
+    ]},
+    stressed: { title: "Calm & Restore", desc: "These foods help reduce cortisol and anxiety.", foods: [
+      { name: "Dark chocolate", cal: 150, emoji: "🍫", reason: "Reduces cortisol" },
+      { name: "Chamomile tea + honey", cal: 30, emoji: "🍵", reason: "Calming effect" },
+      { name: "Walnut bowl", cal: 185, emoji: "🥜", reason: "Omega-3 for brain" },
+    ]},
+    tired: { title: "Wake Up & Recharge", desc: "Foods that naturally boost alertness and mood.", foods: [
+      { name: "Matcha latte", cal: 80, emoji: "🍵", reason: "Steady caffeine" },
+      { name: "Eggs on toast", cal: 310, emoji: "🥚", reason: "Protein + B12" },
+      { name: "Iron-rich spinach", cal: 45, emoji: "🥬", reason: "Fights fatigue" },
+    ]},
+    happy: { title: "Keep the Joy Going", desc: "Balanced foods to maintain your great mood!", foods: [
+      { name: "Berry parfait", cal: 220, emoji: "🍓", reason: "Antioxidants" },
+      { name: "Avocado toast", cal: 290, emoji: "🥑", reason: "Healthy fats" },
+      { name: "Herbal salad", cal: 140, emoji: "🥗", reason: "Nutrient-rich" },
+    ]},
+    lowenergy: { title: "Power Up!", desc: "Slow-release energy to get you through the day.", foods: [
+      { name: "Sweet potato", cal: 180, emoji: "🍠", reason: "Complex carbs" },
+      { name: "Peanut butter", cal: 190, emoji: "🥜", reason: "Protein + fats" },
+      { name: "Brown rice bowl", cal: 340, emoji: "🍚", reason: "Sustained energy" },
+    ]},
+    focused: { title: "Stay Sharp", desc: "Brain-boosting foods for peak performance.", foods: [
+      { name: "Blueberries", cal: 85, emoji: "🫐", reason: "Memory boost" },
+      { name: "Salmon fillet", cal: 412, emoji: "🐟", reason: "DHA for focus" },
+      { name: "Green tea", cal: 5, emoji: "🍵", reason: "L-theanine calm" },
+    ]},
+  };
+
+  return (
+    <Screen>
+      <div style={{ padding: "52px 20px 20px" }}>
+        <h1 style={{ fontFamily: FONTS.display, fontWeight: 800, fontSize: 26, color: COLORS.text }}>Mood & Food</h1>
+        <p style={{ color: COLORS.grey, fontSize: 14, marginTop: 4 }}>How are you feeling today?</p>
+      </div>
+
+      {/* Mood Grid */}
+      <div style={{ padding: "0 20px 24px", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+        {moods.map(({ key, emoji, label, color, bg }) => (
+          <button key={key} onClick={() => setMood(key)} style={{
+            padding: "18px 10px", borderRadius: 18, border: `2px solid ${mood === key ? color : "transparent"}`,
+            background: mood === key ? bg : COLORS.card, cursor: "pointer", textAlign: "center",
+            boxShadow: mood === key ? `0 4px 16px ${color}44` : "0 1px 8px rgba(0,0,0,0.05)",
+            transition: "all 0.2s ease", transform: mood === key ? "scale(1.04)" : "scale(1)"
+          }}>
+            <div style={{ fontSize: 32, marginBottom: 8 }}>{emoji}</div>
+            <div style={{ fontFamily: FONTS.display, fontWeight: 600, fontSize: 12, color: mood === key ? color : COLORS.textMid }}>{label}</div>
+          </button>
+        ))}
+      </div>
+
+      {/* Suggestions */}
+      {mood && suggestions[mood] && (
+        <div style={{ padding: "0 20px", animation: "fadeUp 0.4s ease" }}>
+          <Card style={{ background: `linear-gradient(135deg, ${moods.find(m => m.key === mood).color}18, white)`, marginBottom: 16, border: `1.5px solid ${moods.find(m => m.key === mood).color}30` }}>
+            <div style={{ fontSize: 36, marginBottom: 8 }}>{moods.find(m => m.key === mood).emoji}</div>
+            <h3 style={{ fontFamily: FONTS.display, fontWeight: 800, fontSize: 20, color: COLORS.text }}>{suggestions[mood].title}</h3>
+            <p style={{ color: COLORS.grey, fontSize: 14, marginTop: 4 }}>{suggestions[mood].desc}</p>
+          </Card>
+
+          {suggestions[mood].foods.map(({ name, cal, emoji, reason }, i) => (
+            <Card key={name} style={{ marginBottom: 10, display: "flex", alignItems: "center", gap: 14, animation: `fadeUp 0.3s ${i * 0.08}s ease both`, opacity: 0, animationFillMode: "forwards" }}>
+              <div style={{ width: 52, height: 52, borderRadius: 16, background: `${moods.find(m => m.key === mood).color}18`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>{emoji}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: 15, color: COLORS.text }}>{name}</div>
+                <div style={{ fontSize: 12, color: COLORS.grey, marginTop: 2 }}>✨ {reason}</div>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: 16, color: moods.find(m => m.key === mood).color }}>{cal} kcal</div>
+                <button style={{ background: COLORS.greenLight, border: "none", borderRadius: 8, padding: "4px 10px", color: COLORS.greenDark, fontSize: 12, fontFamily: FONTS.body, fontWeight: 600, cursor: "pointer", marginTop: 4 }}>+ Add</button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {!mood && (
+        <div style={{ textAlign: "center", padding: "20px", color: COLORS.grey, fontSize: 14 }}>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>🫀</div>
+          <p>Select your mood above to get<br />personalized food recommendations</p>
+        </div>
+      )}
+    </Screen>
+  );
+};
+
+// ─── WATER TRACKER ────────────────────────────────────────────────────────────
+const WaterScreen = () => {
+  const [glasses, setGlasses] = useState(5);
+  const goal = 8;
+  const ml = glasses * 250;
+  const goalMl = goal * 250;
+
+  return (
+    <Screen>
+      <div style={{ padding: "52px 20px 20px" }}>
+        <h1 style={{ fontFamily: FONTS.display, fontWeight: 800, fontSize: 26, color: COLORS.text }}>Water Tracker</h1>
+        <p style={{ color: COLORS.grey, fontSize: 14, marginTop: 4 }}>Stay hydrated throughout the day</p>
+      </div>
+
+      {/* Hero */}
+      <div style={{ padding: "0 20px 20px" }}>
+        <Card style={{ background: `linear-gradient(160deg, #0A2E4A, #1565C0)`, textAlign: "center", padding: "40px 24px" }}>
+          <div style={{ position: "relative", display: "inline-block", marginBottom: 20 }}>
+            <CircularProgress value={glasses} max={goal} size={160} stroke={12} color="#7EC8E3" bg="rgba(255,255,255,0.15)"
+              label={`${glasses}`} sublabel={`/ ${goal}`} />
+          </div>
+          <div style={{ fontFamily: FONTS.display, fontWeight: 800, fontSize: 28, color: "#fff" }}>{ml} <span style={{ fontSize: 16, color: "rgba(255,255,255,0.6)" }}>ml</span></div>
+          <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, marginTop: 4 }}>of {goalMl}ml daily goal</div>
+          <div style={{ fontSize: 13, color: "#7EC8E3", marginTop: 12 }}>
+            {glasses >= goal ? "🎉 Goal achieved!" : `💧 ${goal - glasses} more glasses to go`}
+          </div>
+        </Card>
+      </div>
+
+      {/* Glasses Grid */}
+      <div style={{ padding: "0 20px 20px" }}>
+        <SectionHeader title="Tap to log a glass" />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+          {Array.from({ length: goal }).map((_, i) => (
+            <button key={i} onClick={() => setGlasses(i + 1)} style={{
+              height: 72, borderRadius: 18, border: "none", cursor: "pointer",
+              background: i < glasses ? `linear-gradient(180deg, #7EC8E3, #1565C0)` : COLORS.greyLight,
+              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4,
+              boxShadow: i < glasses ? "0 4px 14px rgba(21,101,192,0.4)" : "none",
+              transition: "all 0.25s ease", transform: i < glasses ? "scale(1)" : "scale(0.95)"
+            }}>
+              <span style={{ fontSize: 24 }}>{i < glasses ? "💧" : "○"}</span>
+              <span style={{ fontSize: 11, color: i < glasses ? "#fff" : COLORS.grey, fontFamily: FONTS.display, fontWeight: 600 }}>{(i + 1) * 250}ml</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Quick add buttons */}
+      <div style={{ padding: "0 20px 20px" }}>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={() => setGlasses(Math.max(0, glasses - 1))} style={{ flex: 1, padding: "14px", borderRadius: 14, border: `1.5px solid ${COLORS.greyMid}`, background: COLORS.card, fontFamily: FONTS.display, fontWeight: 700, fontSize: 18, color: COLORS.red, cursor: "pointer" }}>−</button>
+          <button onClick={() => setGlasses(Math.min(goal, glasses + 1))} style={{ flex: 2, padding: "14px", borderRadius: 14, border: "none", background: `linear-gradient(135deg, #7EC8E3, #1565C0)`, fontFamily: FONTS.display, fontWeight: 700, fontSize: 15, color: "#fff", cursor: "pointer", boxShadow: "0 4px 14px rgba(21,101,192,0.35)" }}>+ Add Glass (250ml)</button>
+        </div>
+      </div>
+
+      {/* Reminders */}
+      <div style={{ padding: "0 20px" }}>
+        <SectionHeader title="Reminder Schedule" />
+        {["8:00 AM", "11:00 AM", "2:00 PM", "5:00 PM", "8:00 PM"].map((time, i) => (
+          <Card key={time} style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: COLORS.blue + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>⏰</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: FONTS.display, fontWeight: 600, fontSize: 14, color: COLORS.text }}>{time}</div>
+              <div style={{ fontSize: 12, color: COLORS.grey }}>Hydration reminder</div>
+            </div>
+            <div style={{ width: 44, height: 26, borderRadius: 13, background: i < 3 ? COLORS.blue : COLORS.greyMid, position: "relative", cursor: "pointer", transition: "background 0.2s" }}>
+              <div style={{ position: "absolute", top: 3, width: 20, height: 20, borderRadius: "50%", background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,0.2)", transition: "left 0.2s", left: i < 3 ? 21 : 3 }} />
+            </div>
+          </Card>
+        ))}
+      </div>
+    </Screen>
+  );
+};
+
+// ─── CALORIES & WORKOUT ───────────────────────────────────────────────────────
+const CaloriesScreen = () => {
+  const [workouts, setWorkouts] = useState([
+    { name: "Morning Run", cal: 280, duration: "35 min", emoji: "🏃", done: true },
+    { name: "Yoga", cal: 120, duration: "25 min", emoji: "🧘", done: false },
+  ]);
+  const eaten = 1340;
+  const burned = workouts.filter(w => w.done).reduce((s, w) => s + w.cal, 0);
+  const net = eaten - burned;
+  const goal = 2000;
+
+  return (
+    <Screen>
+      <div style={{ padding: "52px 20px 20px" }}>
+        <h1 style={{ fontFamily: FONTS.display, fontWeight: 800, fontSize: 26, color: COLORS.text }}>Calorie Balance</h1>
+        <p style={{ color: COLORS.grey, fontSize: 14, marginTop: 4 }}>Calories in vs calories out</p>
+      </div>
+
+      {/* Balance Card */}
+      <div style={{ padding: "0 20px 20px" }}>
+        <Card style={{ background: `linear-gradient(135deg, ${COLORS.navy}, #1A3A2A)`, padding: "28px 24px" }}>
+          <div style={{ display: "flex", justifyContent: "space-around", marginBottom: 24 }}>
+            {[
+              { label: "Eaten", value: eaten, color: COLORS.orange, icon: "🍽️" },
+              { label: "Burned", value: burned, color: COLORS.blue, icon: "🔥" },
+              { label: "Net", value: net, color: net < goal ? COLORS.green : COLORS.red, icon: "⚖️" },
+            ].map(({ label, value, color, icon }) => (
+              <div key={label} style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 24, marginBottom: 8 }}>{icon}</div>
+                <div style={{ fontFamily: FONTS.display, fontWeight: 800, fontSize: 24, color }}>{value}</div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 4, textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Balance visualization */}
+          <div style={{ background: "rgba(255,255,255,0.08)", borderRadius: 12, padding: "16px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>Daily Goal Progress</span>
+              <span style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: 12, color: COLORS.green }}>{goal - net} kcal remaining</span>
+            </div>
+            <ProgressBar value={net} max={goal} color={net < goal ? COLORS.green : COLORS.red} height={12} bg="rgba(255,255,255,0.1)" />
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>0</span>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{goal} kcal goal</span>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Weekly Chart */}
+      <div style={{ padding: "0 20px 20px" }}>
+        <SectionHeader title="Weekly Overview" />
+        <Card>
+          <div style={{ display: "flex", gap: 8, alignItems: "flex-end", height: 100 }}>
+            {[
+              { day: "M", eaten: 1800, burned: 300 },
+              { day: "T", eaten: 2100, burned: 450 },
+              { day: "W", eaten: 1650, burned: 200 },
+              { day: "T", eaten: 1900, burned: 380 },
+              { day: "F", eaten: 1340, burned: 280 },
+              { day: "S", eaten: 0, burned: 0 },
+              { day: "S", eaten: 0, burned: 0 },
+            ].map(({ day, eaten, burned }, i) => (
+              <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                <div style={{ display: "flex", gap: 2, alignItems: "flex-end", height: 80 }}>
+                  <div style={{ width: "42%", height: `${(eaten / 2200) * 80}px`, background: i === 4 ? COLORS.orange : `${COLORS.orange}66`, borderRadius: "4px 4px 0 0", transition: "height 0.5s ease" }} />
+                  <div style={{ width: "42%", height: `${(burned / 2200) * 80}px`, background: i === 4 ? COLORS.blue : `${COLORS.blue}66`, borderRadius: "4px 4px 0 0", transition: "height 0.5s ease" }} />
+                </div>
+                <span style={{ fontSize: 10, color: i === 4 ? COLORS.text : COLORS.grey, fontFamily: FONTS.display, fontWeight: i === 4 ? 700 : 400 }}>{day}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 16, marginTop: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <div style={{ width: 10, height: 10, borderRadius: 3, background: COLORS.orange }} />
+              <span style={{ fontSize: 12, color: COLORS.grey }}>Calories Eaten</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <div style={{ width: 10, height: 10, borderRadius: 3, background: COLORS.blue }} />
+              <span style={{ fontSize: 12, color: COLORS.grey }}>Calories Burned</span>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Workouts */}
+      <div style={{ padding: "0 20px" }}>
+        <SectionHeader title="Today's Workouts" />
+        {workouts.map(({ name, cal, duration, emoji, done }, i) => (
+          <Card key={name} style={{ marginBottom: 10, display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{ width: 48, height: 48, borderRadius: 16, background: done ? `${COLORS.blue}18` : COLORS.greyLight, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>{emoji}</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: 15, color: COLORS.text }}>{name}</div>
+              <div style={{ fontSize: 12, color: COLORS.grey, marginTop: 2 }}>⏱ {duration}</div>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: 16, color: done ? COLORS.blue : COLORS.grey }}>-{cal}</div>
+              <div style={{ fontSize: 10, color: COLORS.grey }}>kcal</div>
+            </div>
+            <button onClick={() => setWorkouts(ws => ws.map((w, j) => j === i ? { ...w, done: !w.done } : w))} style={{
+              width: 32, height: 32, borderRadius: 10, border: "none", background: done ? COLORS.green : COLORS.greyLight,
+              display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+              color: done ? "#fff" : COLORS.grey, transition: "all 0.2s ease"
+            }}><Icons.Check /></button>
+          </Card>
+        ))}
+
+        <button style={{ width: "100%", padding: "14px", borderRadius: 16, border: `2px dashed ${COLORS.greyMid}`, background: "transparent", fontFamily: FONTS.display, fontWeight: 600, fontSize: 14, color: COLORS.grey, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+          <Icons.Plus /> Log New Workout
+        </button>
+      </div>
+    </Screen>
+  );
+};
+
+// ─── GROCERY LIST ─────────────────────────────────────────────────────────────
+const GroceryScreen = () => {
+  const [checked, setChecked] = useState({});
+  const categories = [
+    { name: "Produce", emoji: "🥦", items: ["Broccoli (1 head)", "Spinach (200g)", "Cherry tomatoes", "Avocados (3)", "Bananas (bunch)", "Mixed berries (300g)"] },
+    { name: "Protein", emoji: "🍗", items: ["Chicken breast (500g)", "Salmon fillet (400g)", "Eggs (12)", "Greek yogurt (500g)", "Lentils (dry, 250g)"] },
+    { name: "Grains", emoji: "🌾", items: ["Oats (500g)", "Quinoa (250g)", "Brown rice (500g)", "Whole wheat bread"] },
+    { name: "Dairy & Fats", emoji: "🥛", items: ["Almond milk (1L)", "Cheese (block)", "Olive oil", "Peanut butter"] },
+  ];
+
+  const totalItems = categories.reduce((s, c) => s + c.items.length, 0);
+  const checkedCount = Object.values(checked).filter(Boolean).length;
+
+  return (
+    <Screen>
+      <div style={{ background: `linear-gradient(135deg, ${COLORS.navy}, #1A3A2A)`, padding: "52px 20px 30px" }}>
+        <h1 style={{ fontFamily: FONTS.display, fontWeight: 800, fontSize: 26, color: "#fff" }}>Grocery List</h1>
+        <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 14, marginTop: 4 }}>Based on your weekly meal plan</p>
+        <div style={{ display: "flex", gap: 16, marginTop: 16 }}>
+          <div style={{ background: "rgba(255,255,255,0.1)", borderRadius: 12, padding: "10px 16px", flex: 1, textAlign: "center" }}>
+            <div style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: 20, color: COLORS.green }}>{checkedCount}</div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>Collected</div>
+          </div>
+          <div style={{ background: "rgba(255,255,255,0.1)", borderRadius: 12, padding: "10px 16px", flex: 1, textAlign: "center" }}>
+            <div style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: 20, color: "#fff" }}>{totalItems - checkedCount}</div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>Remaining</div>
+          </div>
+          <div style={{ background: "rgba(255,255,255,0.1)", borderRadius: 12, padding: "10px 16px", flex: 1, textAlign: "center" }}>
+            <div style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: 20, color: COLORS.yellow }}>{Math.round((checkedCount / totalItems) * 100)}%</div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>Complete</div>
+          </div>
+        </div>
+        <ProgressBar value={checkedCount} max={totalItems} height={6} bg="rgba(255,255,255,0.15)" style={{ marginTop: 12 }} />
+      </div>
+
+      <div style={{ padding: "20px" }}>
+        {categories.map(({ name, emoji, items }, ci) => (
+          <div key={name} style={{ marginBottom: 20, animation: `fadeUp 0.4s ${ci * 0.1}s ease both`, opacity: 0, animationFillMode: "forwards" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+              <span style={{ fontSize: 20 }}>{emoji}</span>
+              <h3 style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: 16, color: COLORS.text }}>{name}</h3>
+              <span style={{ fontSize: 12, color: COLORS.grey }}>({items.filter(item => checked[`${name}-${item}`]).length}/{items.length})</span>
+            </div>
+            <Card style={{ padding: "8px 0" }}>
+              {items.map((item, ii) => {
+                const key = `${name}-${item}`;
+                const isChecked = checked[key];
+                return (
+                  <div key={item} onClick={() => setChecked(c => ({ ...c, [key]: !c[key] }))} style={{
+                    display: "flex", alignItems: "center", gap: 14, padding: "12px 18px",
+                    borderBottom: ii < items.length - 1 ? `1px solid ${COLORS.greyLight}` : "none", cursor: "pointer"
+                  }}>
+                    <div style={{
+                      width: 24, height: 24, borderRadius: 8, border: `2px solid ${isChecked ? COLORS.green : COLORS.greyMid}`,
+                      background: isChecked ? COLORS.green : "transparent", display: "flex", alignItems: "center", justifyContent: "center",
+                      flexShrink: 0, transition: "all 0.2s ease"
+                    }}>
+                      {isChecked && <span style={{ color: "#fff" }}><Icons.Check /></span>}
+                    </div>
+                    <span style={{ fontSize: 14, color: isChecked ? COLORS.grey : COLORS.text, textDecoration: isChecked ? "line-through" : "none", transition: "all 0.2s ease" }}>{item}</span>
+                  </div>
+                );
+              })}
+            </Card>
+          </div>
+        ))}
+      </div>
+    </Screen>
+  );
+};
+
+// ─── GAMIFICATION ─────────────────────────────────────────────────────────────
+const GamificationScreen = () => {
+  const badges = [
+    { name: "First Scan", desc: "Scanned your first meal", emoji: "🎯", earned: true },
+    { name: "Week Warrior", desc: "7-day logging streak", emoji: "⚡", earned: true },
+    { name: "Hydration Hero", desc: "Hit water goal 5 days", emoji: "💧", earned: true },
+    { name: "Protein King", desc: "Hit protein goal 7 days", emoji: "💪", earned: false },
+    { name: "Marathon Month", desc: "30-day streak", emoji: "🏆", earned: false },
+    { name: "Clean Eater", desc: "10 days under calorie goal", emoji: "🥗", earned: false },
+  ];
+
+  return (
+    <Screen>
+      <div style={{ padding: "52px 20px 20px" }}>
+        <h1 style={{ fontFamily: FONTS.display, fontWeight: 800, fontSize: 26, color: COLORS.text }}>Achievements</h1>
+        <p style={{ color: COLORS.grey, fontSize: 14, marginTop: 4 }}>Your fitness journey milestones</p>
+      </div>
+
+      {/* Streak Card */}
+      <div style={{ padding: "0 20px 20px" }}>
+        <Card style={{ background: `linear-gradient(135deg, #FF6B35, #E84393)`, textAlign: "center", padding: "30px" }}>
+          <div style={{ fontSize: 56, animation: "bounce 1.5s ease infinite" }}>🔥</div>
+          <div style={{ fontFamily: FONTS.display, fontWeight: 800, fontSize: 48, color: "#fff", letterSpacing: "-0.02em", marginTop: 8 }}>12</div>
+          <div style={{ color: "rgba(255,255,255,0.8)", fontSize: 16, fontFamily: FONTS.display, fontWeight: 600 }}>Day Streak</div>
+          <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, marginTop: 4 }}>Best: 18 days 🏆</div>
+          <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 16 }}>
+            {Array.from({ length: 7 }).map((_, i) => (
+              <div key={i} style={{ width: 32, height: 32, borderRadius: 10, background: i < 5 ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>{i < 5 ? "🔥" : "·"}</div>
+            ))}
+          </div>
+        </Card>
+      </div>
+
+      {/* XP Progress */}
+      <div style={{ padding: "0 20px 20px" }}>
+        <Card>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <div>
+              <div style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: 16, color: COLORS.text }}>Level 8 · Health Champion</div>
+              <div style={{ fontSize: 12, color: COLORS.grey, marginTop: 2 }}>1,240 / 2,000 XP to Level 9</div>
+            </div>
+            <div style={{ width: 48, height: 48, borderRadius: 14, background: `${COLORS.yellow}22`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26 }}>⭐</div>
+          </div>
+          <ProgressBar value={1240} max={2000} color={COLORS.yellow} height={10} />
+          <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+            {[["🍽️", "+10 XP", "Log meal"], ["💧", "+5 XP", "Log water"], ["🏋️", "+15 XP", "Workout"]].map(([e, xp, l]) => (
+              <div key={l} style={{ flex: 1, background: COLORS.greyLight, borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
+                <div style={{ fontSize: 20, marginBottom: 4 }}>{e}</div>
+                <div style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: 12, color: COLORS.green }}>{xp}</div>
+                <div style={{ fontSize: 10, color: COLORS.grey }}>{l}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+
+      {/* Badges */}
+      <div style={{ padding: "0 20px" }}>
+        <SectionHeader title="Badges" />
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          {badges.map(({ name, desc, emoji, earned }, i) => (
+            <Card key={name} style={{ textAlign: "center", padding: "20px 12px", opacity: earned ? 1 : 0.5, animation: `fadeUp 0.4s ${i * 0.06}s ease both`, animationFillMode: "forwards" }}>
+              <div style={{ width: 56, height: 56, borderRadius: 18, background: earned ? `${COLORS.yellow}22` : COLORS.greyLight, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30, margin: "0 auto 10px", border: earned ? `2px solid ${COLORS.yellow}44` : "none" }}>{emoji}</div>
+              <div style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: 13, color: COLORS.text }}>{name}</div>
+              <div style={{ fontSize: 11, color: COLORS.grey, marginTop: 4, lineHeight: 1.4 }}>{desc}</div>
+              {earned && <div style={{ marginTop: 8, fontSize: 11, color: COLORS.green, fontFamily: FONTS.display, fontWeight: 600 }}>✓ Earned</div>}
+              {!earned && <div style={{ marginTop: 8, fontSize: 11, color: COLORS.grey }}>🔒 Locked</div>}
+            </Card>
+          ))}
+        </div>
+      </div>
+    </Screen>
+  );
+};
+
+// ─── PROFILE SCREEN ───────────────────────────────────────────────────────────
+const ProfileScreen = ({ setLoggedIn }) => {
+  const stats = [
+    { label: "Current Weight", value: "74 kg", emoji: "⚖️" },
+    { label: "Goal Weight", value: "70 kg", emoji: "🎯" },
+    { label: "Height", value: "175 cm", emoji: "📏" },
+    { label: "Daily Goal", value: "2,000 kcal", emoji: "🔥" },
+  ];
+
+  const settings = [
+    { label: "Dietary Preferences", value: "Balanced", emoji: "🥗" },
+    { label: "Activity Level", value: "Moderate", emoji: "🏃" },
+    { label: "Notifications", value: "On", emoji: "🔔" },
+    { label: "Units", value: "Metric", emoji: "📐" },
+    { label: "Language", value: "English", emoji: "🌐" },
+  ];
+
+  return (
+    <Screen>
+      {/* Header */}
+      <div style={{ background: `linear-gradient(160deg, ${COLORS.navy}, #1A3A2A)`, padding: "52px 20px 40px", textAlign: "center" }}>
+        <div style={{ width: 88, height: 88, borderRadius: "50%", background: `linear-gradient(135deg, ${COLORS.green}, ${COLORS.greenDark})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 44, margin: "0 auto 16px", boxShadow: `0 6px 20px ${COLORS.green}55` }}>👤</div>
+        <h1 style={{ fontFamily: FONTS.display, fontWeight: 800, fontSize: 22, color: "#fff" }}>Alex Johnson</h1>
+        <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 14, marginTop: 4 }}>alex.johnson@email.com</p>
+        <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 14 }}>
+          {[["🔥", "12d Streak"], ["⭐", "Level 8"], ["🏆", "3 Badges"]].map(([e, l]) => (
+            <div key={l} style={{ background: "rgba(255,255,255,0.1)", borderRadius: 10, padding: "6px 12px", display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 14 }}>{e}</span>
+              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", fontFamily: FONTS.display, fontWeight: 600 }}>{l}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div style={{ padding: "20px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 24 }}>
+          {stats.map(({ label, value, emoji }) => (
+            <Card key={label} style={{ textAlign: "center", padding: "16px" }}>
+              <div style={{ fontSize: 24, marginBottom: 8 }}>{emoji}</div>
+              <div style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: 18, color: COLORS.text }}>{value}</div>
+              <div style={{ fontSize: 12, color: COLORS.grey, marginTop: 2 }}>{label}</div>
+            </Card>
+          ))}
+        </div>
+
+        {/* Settings */}
+        <SectionHeader title="Settings" />
+        <Card style={{ padding: "8px 0", marginBottom: 16 }}>
+          {settings.map(({ label, value, emoji }, i) => (
+            <div key={label} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", borderBottom: i < settings.length - 1 ? `1px solid ${COLORS.greyLight}` : "none" }}>
+              <span style={{ fontSize: 20 }}>{emoji}</span>
+              <span style={{ flex: 1, fontFamily: FONTS.body, fontSize: 15, color: COLORS.text }}>{label}</span>
+              <span style={{ fontSize: 13, color: COLORS.grey, marginRight: 6 }}>{value}</span>
+              <Icons.ChevronRight />
+            </div>
+          ))}
+        </Card>
+
+        {/* Logout */}
+        <button onClick={() => setLoggedIn(false)} style={{
+          width: "100%", padding: "16px", borderRadius: 16, border: `1.5px solid ${COLORS.red}44`,
+          background: `${COLORS.red}10`, fontFamily: FONTS.display, fontWeight: 700, fontSize: 15, color: COLORS.red, cursor: "pointer"
+        }}>Sign Out</button>
+      </div>
+    </Screen>
+  );
+};
+
+// ─── BOTTOM NAVIGATION ────────────────────────────────────────────────────────
+const BottomNav = ({ screen, setScreen }) => {
+  const tabs = [
+    { id: "home", icon: Icons.Home, label: "Home" },
+    { id: "scanner", icon: Icons.Camera, label: "Scan" },
+    { id: "meals", icon: Icons.Utensils, label: "Meals" },
+    { id: "water", icon: Icons.Droplet, label: "Water" },
+    { id: "profile", icon: Icons.User, label: "Profile" },
+  ];
+
+  return (
+    <div style={{
+      position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)",
+      width: "100%", maxWidth: 430,
+      background: "rgba(255,255,255,0.95)", backdropFilter: "blur(20px)",
+      borderTop: `1px solid ${COLORS.greyLight}`,
+      display: "flex", alignItems: "center", justifyContent: "space-around",
+      padding: "8px 16px 20px", zIndex: 100,
+      boxShadow: "0 -4px 24px rgba(0,0,0,0.08)"
+    }}>
+      {tabs.map(({ id, icon: Icon, label }) => {
+        const active = screen === id;
+        return (
+          <button key={id} onClick={() => setScreen(id)} style={{
+            display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+            background: "none", border: "none", cursor: "pointer", padding: "4px 12px",
+            color: active ? COLORS.green : COLORS.grey, transition: "color 0.2s ease",
+            position: "relative"
+          }}>
+            {active && <div style={{ position: "absolute", top: -8, left: "50%", transform: "translateX(-50%)", width: 36, height: 3, borderRadius: "0 0 3px 3px", background: COLORS.green }} />}
+            <div style={{ transform: active ? "scale(1.1)" : "scale(1)", transition: "transform 0.2s ease" }}><Icon /></div>
+            <span style={{ fontSize: 10, fontFamily: FONTS.display, fontWeight: active ? 700 : 500 }}>{label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
+// ─── FLOATING ACTION BUTTON ───────────────────────────────────────────────────
+const FAB = ({ setScreen }) => (
+  <button onClick={() => setScreen("scanner")} style={{
+    position: "fixed", bottom: 70, right: 20, width: 56, height: 56, borderRadius: "50%",
+    background: `linear-gradient(135deg, ${COLORS.green}, ${COLORS.greenDark})`,
+    border: "none", color: "#fff", cursor: "pointer", zIndex: 101,
+    boxShadow: `0 6px 24px ${COLORS.green}55`, display: "flex", alignItems: "center", justifyContent: "center",
+    fontSize: 24, transition: "transform 0.15s ease"
+  }} onMouseDown={e => e.currentTarget.style.transform = "scale(0.92)"}
+    onMouseUp={e => e.currentTarget.style.transform = "scale(1)"}>+</button>
+);
+
+// ─── TOP BAR ──────────────────────────────────────────────────────────────────
+const TopBar = ({ screen, setScreen }) => {
+  const titles = {
+    home: null, scanner: "AI Scanner", meals: "Meal Plan",
+    water: "Water Tracker", calories: "Calorie Balance",
+    mood: "Mood & Food", grocery: "Grocery List",
+    achievements: "Achievements", profile: "Profile", voice: "Voice Log"
+  };
+  const title = titles[screen];
+  if (!title) return null;
+
+  return (
+    <div style={{
+      position: "fixed", top: 0, left: "50%", transform: "translateX(-50%)",
+      width: "100%", maxWidth: 430, zIndex: 99,
+      background: "rgba(247,248,250,0.95)", backdropFilter: "blur(20px)",
+      padding: "48px 20px 12px",
+      boxShadow: "0 2px 12px rgba(0,0,0,0.05)"
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <button onClick={() => setScreen("home")} style={{ background: COLORS.greyLight, border: "none", borderRadius: 10, width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: COLORS.text, flexShrink: 0 }}>
+          ←
+        </button>
+        <h1 style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: 18, color: COLORS.text }}>{title}</h1>
+      </div>
+    </div>
+  );
+};
+
+// ─── SIDE MENU SCREENS (accessible from home via shortcuts) ───────────────────
+const ExtraScreens = ({ screen, setScreen }) => {
+  if (screen === "calories") return <CaloriesScreen />;
+  if (screen === "mood") return <MoodScreen />;
+  if (screen === "grocery") return <GroceryScreen />;
+  if (screen === "achievements") return <GamificationScreen />;
+  if (screen === "voice") return <ScannerScreen />;
+  return null;
+};
+
+// ─── MAIN APP ─────────────────────────────────────────────────────────────────
+export default function NutriTrack() {
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [screen, setScreen] = useState("home");
+
+  const mainScreens = ["home", "scanner", "meals", "water", "profile"];
+  const isMainScreen = mainScreens.includes(screen);
+
+  if (!loggedIn) {
+    return (
+      <div style={{ maxWidth: 430, margin: "0 auto", minHeight: "100vh" }}>
+        <style>{globalStyles}</style>
+        <LoginScreen onLogin={() => setLoggedIn(true)} />
+      </div>
+    );
+  }
+
+  const renderScreen = () => {
+    switch (screen) {
+      case "home": return <HomeScreen setScreen={setScreen} />;
+      case "scanner": return <ScannerScreen />;
+      case "meals": return <MealsScreen setScreen={setScreen} />;
+      case "water": return <WaterScreen />;
+      case "profile": return <ProfileScreen setLoggedIn={setLoggedIn} />;
+      default: return <ExtraScreens screen={screen} setScreen={setScreen} />;
+    }
+  };
+
+  return (
+    <div style={{ maxWidth: 430, margin: "0 auto", minHeight: "100vh", background: COLORS.bg, position: "relative", overflow: "hidden" }}>
+      <style>{globalStyles}</style>
+      <TopBar screen={screen} setScreen={setScreen} />
+      {renderScreen()}
+      <BottomNav screen={screen} setScreen={setScreen} />
+
+      {/* Extra navigation shortcuts */}
+      {screen === "home" && (
+        <div style={{ position: "fixed", bottom: 80, left: 20, display: "flex", flexDirection: "column", gap: 8, zIndex: 100 }}>
+          {[
+            { id: "mood", emoji: "😊", label: "Mood" },
+            { id: "calories", emoji: "⚡", label: "Activity" },
+            { id: "achievements", emoji: "🏆", label: "Awards" },
+          ].map(({ id, emoji, label }) => (
+            <button key={id} onClick={() => setScreen(id)} style={{
+              display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", borderRadius: 99,
+              background: "rgba(255,255,255,0.95)", backdropFilter: "blur(10px)",
+              border: `1px solid ${COLORS.greyMid}`, cursor: "pointer",
+              fontFamily: FONTS.display, fontWeight: 600, fontSize: 12, color: COLORS.text,
+              boxShadow: "0 2px 12px rgba(0,0,0,0.1)"
+            }}>
+              <span style={{ fontSize: 16 }}>{emoji}</span> {label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

@@ -77,6 +77,7 @@ const state = {
 };
 
 const APP_STATE_STORAGE_KEY_PREFIX = 'nutritrack-app-state';
+const DUMMY_SCAN_INDEX_KEY = 'nutritrack-dummy-scan-index';
 const SCAN_API_ENDPOINT = '/api/scan';
 const LOG_API_ENDPOINT = '/api/log';
 
@@ -482,7 +483,8 @@ function getAuthErrorMessage(error) {
     'auth/wrong-password': 'That password is incorrect. Please try again.',
     'auth/user-disabled': 'This account has been disabled.',
     'auth/network-request-failed': 'Network error. Check your internet connection and try again.',
-    'auth/unauthorized-domain': 'This domain is not authorized for sign-in. Add localhost to Authorized domains in your auth console.',
+    'auth/unauthorized-domain': 'This domain is not authorized for sign-in. Add this app domain in Firebase Authentication settings.',
+    'auth/unauthorized-continue-uri': 'Email verification is blocked because this return link is not authorized in Firebase. Try Resend verification email now.',
     'auth/weak-password': 'Password should be at least 6 characters.',
     'auth/operation-not-allowed': 'Email/password sign-in is not enabled in your auth console yet.',
     'auth/too-many-requests': 'Too many attempts. Wait a bit, then try again.',
@@ -504,13 +506,7 @@ function getAuthErrorMessage(error) {
 async function sendVerificationEmail(user) {
   if (!user || user.emailVerified) return;
 
-  const isLocalHost = ['localhost', '127.0.0.1', '0.0.0.0'].includes(window.location.hostname);
-  if (isLocalHost) {
-    await user.sendEmailVerification();
-    return;
-  }
-
-  await user.sendEmailVerification({ url: window.location.origin, handleCodeInApp: false });
+  await user.sendEmailVerification();
 }
 
 async function checkVerifiedAndContinue() {
@@ -946,11 +942,15 @@ function setVerificationActionsVisible(visible) {
   const passwordField = $('auth-password')?.closest('.auth-field');
   const tabs = document.querySelector('.auth-tabs');
   const resetBtn = $('auth-reset-password-btn');
+  const continueBtn = $('auth-continue-btn');
   if (nameField) nameField.style.display = visible ? 'none' : '';
   if (passwordField) passwordField.style.display = visible ? 'none' : '';
   if (tabs) tabs.style.display = visible ? 'none' : '';
   if (resetBtn) resetBtn.style.display = visible ? 'none' : '';
-  if ($('auth-continue-btn')) $('auth-continue-btn').textContent = visible ? 'I verified my email' : (state.auth.mode === 'signup' ? 'Create Account' : 'Sign In');
+  if (continueBtn) {
+    continueBtn.style.display = visible ? 'none' : '';
+    continueBtn.textContent = state.auth.mode === 'signup' ? 'Create Account' : 'Sign In';
+  }
 }
 
 function showVerificationPending(email, message) {
@@ -1243,7 +1243,20 @@ function createScanFormData() {
     : new File([state.scanner.imageBlob], fileName, { type: state.scanner.imageBlob.type || 'image/jpeg' });
   formData.append('image', imageFile, fileName);
   formData.append('weight', String(getScannerQuantity()));
+  if (state.selectedFood?.name) {
+    formData.append('hint', state.selectedFood.name);
+  }
+  formData.append('dummyIndex', String(getDummyScanIndex()));
   return formData;
+}
+
+function getDummyScanIndex() {
+  return Number(localStorage.getItem(DUMMY_SCAN_INDEX_KEY)) || 0;
+}
+
+function advanceDummyScanIndex() {
+  const nextIndex = (getDummyScanIndex() + 1) % 5;
+  localStorage.setItem(DUMMY_SCAN_INDEX_KEY, String(nextIndex));
 }
 
 function setScannerImage(imageData, fileName = 'camera-capture.jpg', imageBlob = null) {
@@ -1913,7 +1926,11 @@ function initScanner() {
       document.querySelectorAll('.food-chip').forEach(c => c.classList.remove('active'));
       chip.classList.add('active');
       state.selectedFood = food;
-      setScannerState(state.scanner.imageBlob ? 'preview' : 'idle', `${food.name} selected as a hint. Upload or capture a food image to scan.`);
+      state.scanner.baseResult = null;
+      state.scanner.detectedFood = null;
+      state.scanner.nutrition = null;
+      document.getElementById('scanner-result').style.display = 'none';
+      setScannerState(state.scanner.imageBlob ? 'image_selected' : 'idle', `${food.name} selected. Click Scan Food to view nutrition.`);
     });
     chips.appendChild(chip);
   });
@@ -1987,7 +2004,7 @@ async function analyzeFoodImage() {
   try {
     setScannerState('analyzing', 'Analyzing food...');
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 12000);
+    const timeout = setTimeout(() => controller.abort(), 30000);
     const response = await fetch(SCAN_API_ENDPOINT, {
       method: 'POST',
       body: createScanFormData(),
@@ -1996,8 +2013,8 @@ async function analyzeFoodImage() {
     clearTimeout(timeout);
 
     if (!response.ok) {
-      const errorText = await response.text().catch(() => '');
-      throw new Error(errorText || 'Scan request failed');
+      const errorPayload = await response.json().catch(() => null);
+      throw new Error(errorPayload?.error || 'Scan request failed');
     }
 
     const data = await response.json();
@@ -2009,6 +2026,7 @@ async function analyzeFoodImage() {
     state.scanner.scanWeight = getScannerQuantity();
     state.scanner.baseResult = result;
     state.scanner.detectedFood = result;
+    if (result.source === 'dummy-scan') advanceDummyScanIndex();
     document.querySelectorAll('.food-chip').forEach(c => {
       c.classList.remove('active');
     });
@@ -2021,7 +2039,7 @@ async function analyzeFoodImage() {
       ? 'Scan timed out. Try a clearer image or scan again.'
       : error?.message === 'Food not recognized clearly'
         ? 'Food not recognized clearly. Try a closer, brighter image.'
-        : 'Scan failed, try again.';
+        : error?.message || 'Scan failed, try again.';
     showScannerError(message);
   }
 }
@@ -2036,8 +2054,29 @@ function normalizeScanResponse(data) {
     fat: Number(data.fat) || 0,
     insight: data.insight || 'Nutrition estimate generated from your scan.',
     healthScore: data.healthScore,
-    recognized: data.recognized !== false && Boolean(data.foodName)
+    recognized: data.recognized !== false && Boolean(data.foodName),
+    source: data.source || 'scan'
   };
+}
+
+function showSelectedFoodInfo(food) {
+  state.scanner.scanWeight = 100;
+  state.scanner.baseResult = {
+    foodName: food.name,
+    emoji: food.emoji,
+    calories: Number(food.cal) || 0,
+    protein: Number(food.protein) || 0,
+    carbs: Number(food.carbs) || 0,
+    fat: Number(food.fat) || 0,
+    insight: `${food.name} selected. Adjust the quantity to update calories and macros.`,
+    healthScore: null,
+    recognized: true,
+    source: 'selected-food'
+  };
+  state.scanner.detectedFood = state.scanner.baseResult;
+  updateScanResult();
+  document.getElementById('scanner-result').style.display = 'block';
+  setScannerState(state.scanner.imageBlob ? 'image_selected' : 'success', `${food.name} nutrition loaded. Adjust quantity or add it to your daily log.`);
 }
 
 function updateScanResult() {
